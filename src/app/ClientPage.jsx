@@ -656,7 +656,7 @@ function Dashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-4 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-700">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
             <div>
               <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
               <p className="text-[10px] text-slate-500 font-medium">אישרו</p>
