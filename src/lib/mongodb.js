@@ -6,8 +6,9 @@ const options = {};
 let client;
 let clientPromise;
 
+// We will throw the error when trying to connect instead of at the top level
 if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local');
+  console.warn('MONGODB_URI is missing. Please add it to your environment variables.');
 }
 
 if (process.env.NODE_ENV === 'development') {
