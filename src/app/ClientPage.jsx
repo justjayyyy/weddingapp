@@ -18,6 +18,7 @@ const RSVP_STATUSES = ['ממתין', 'מגיע', 'לא מגיע'];
 const VENDOR_STATUSES = ['ליצור קשר', 'בתהליך', 'חתום', 'שולם במלואו'];
 const VENDOR_CATEGORIES = [...EXPENSE_CATEGORIES, 'אחר'];
 const CHECKLIST_CATS = ['הכנות', 'ספקים', 'לבוש', 'חגיגה', 'הזמנות', 'אחר'];
+const TASK_URGENCIES = ['רגילה', 'בינונית', 'דחופה'];
 
 const CAT_COLORS = {
   'אולם וקייטרינג': '#6366f1', 'ספקים מרכזיים': '#8b5cf6', 'לבוש ויופי': '#ec4899', 'טבעות ותוספות': '#f59e0b',
@@ -28,6 +29,11 @@ const RSVP_BADGE = {
 const VENDOR_BADGE = {
   'ליצור קשר': 'bg-gray-100 text-gray-600', 'בתהליך': 'bg-blue-100 text-blue-700',
   'חתום': 'bg-indigo-100 text-indigo-700', 'שולם במלואו': 'bg-green-100 text-green-700',
+};
+const URGENCY_COLORS = {
+  'רגילה': 'bg-gray-400 dark:bg-gray-500',
+  'בינונית': 'bg-yellow-400 dark:bg-yellow-500',
+  'דחופה': 'bg-red-500 dark:bg-red-600',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -73,19 +79,19 @@ const SEED_GUESTS = [
   { id: uid(), name: 'מורן ביטון', group: 'כללי', side: 'כלה', rsvp_status: 'לא מגיע', estimated_gift: 250, actual_gift: 0 },
 ];
 const SEED_TASKS = [
-  { id: uid(), text: 'לקבוע תאריך ואולם', category: 'הכנות', done: true, due_date: '2025-12-01' },
-  { id: uid(), text: 'לשלוח save the date', category: 'הזמנות', done: true, due_date: '2026-01-15' },
-  { id: uid(), text: 'לחתום על חוזה קייטרינג', category: 'ספקים', done: true, due_date: '2026-02-01' },
-  { id: uid(), text: 'לשלוח הזמנות רשמיות', category: 'הזמנות', done: false, due_date: '2026-04-01' },
-  { id: uid(), text: 'לאשר תפריט קייטרינג', category: 'ספקים', done: false, due_date: '2026-05-01' },
-  { id: uid(), text: 'ניסיון שיער ואיפור', category: 'לבוש', done: false, due_date: '2026-05-15' },
-  { id: uid(), text: 'לקנות טבעות', category: 'חגיגה', done: false, due_date: '2026-06-01' },
-  { id: uid(), text: 'להכין רשימת שירים ל-DJ', category: 'חגיגה', done: false, due_date: '2026-06-15' },
-  { id: uid(), text: 'לאשר פרחים ועיצוב סופי', category: 'ספקים', done: false, due_date: '2026-06-15' },
-  { id: uid(), text: 'לסדר לינה לאורחים מרוחקים', category: 'הכנות', done: false, due_date: '2026-06-20' },
-  { id: uid(), text: 'להכין סידורי ישיבה', category: 'הכנות', done: false, due_date: '2026-07-01' },
-  { id: uid(), text: 'לאשר מספר אורחים סופי לאולם', category: 'ספקים', done: false, due_date: '2026-07-10' },
-  { id: uid(), text: 'להכין תמונות לשולחן ה׳בריפינג׳', category: 'חגיגה', done: false, due_date: '2026-07-15' },
+  { id: uid(), text: 'לקבוע תאריך ואולם', category: 'הכנות', done: true, due_date: '2025-12-01', urgency: 'דחופה' },
+  { id: uid(), text: 'לשלוח save the date', category: 'הזמנות', done: true, due_date: '2026-01-15', urgency: 'בינונית' },
+  { id: uid(), text: 'לחתום על חוזה קייטרינג', category: 'ספקים', done: true, due_date: '2026-02-01', urgency: 'רגילה' },
+  { id: uid(), text: 'לשלוח הזמנות רשמיות', category: 'הזמנות', done: false, due_date: '2026-04-01', urgency: 'דחופה' },
+  { id: uid(), text: 'לאשר תפריט קייטרינג', category: 'ספקים', done: false, due_date: '2026-05-01', urgency: 'בינונית' },
+  { id: uid(), text: 'ניסיון שיער ואיפור', category: 'לבוש', done: false, due_date: '2026-05-15', urgency: 'רגילה' },
+  { id: uid(), text: 'לקנות טבעות', category: 'חגיגה', done: false, due_date: '2026-06-01', urgency: 'דחופה' },
+  { id: uid(), text: 'להכין רשימת שירים ל-DJ', category: 'חגיגה', done: false, due_date: '2026-06-15', urgency: 'רגילה' },
+  { id: uid(), text: 'לאשר פרחים ועיצוב סופי', category: 'ספקים', done: false, due_date: '2026-06-15', urgency: 'רגילה' },
+  { id: uid(), text: 'לסדר לינה לאורחים מרוחקים', category: 'הכנות', done: false, due_date: '2026-06-20', urgency: 'רגילה' },
+  { id: uid(), text: 'להכין סידורי ישיבה', category: 'הכנות', done: false, due_date: '2026-07-01', urgency: 'דחופה' },
+  { id: uid(), text: 'לאשר מספר אורחים סופי לאולם', category: 'ספקים', done: false, due_date: '2026-07-10', urgency: 'בינונית' },
+  { id: uid(), text: 'להכין תמונות לשולחן ה׳בריפינג׳', category: 'חגיגה', done: false, due_date: '2026-07-15', urgency: 'רגילה' },
 ];
 const SEED_VENDORS = [
   { id: uid(), name: 'גן העדן — אולם אירועים', category: 'אולם וקייטרינג', contact_name: 'יוסי כהן', phone: '052-1234567', contract_amount: 45000, paid_amount: 10000, status: 'חתום', notes: 'כולל שולחנות, כיסאות ומפות' },
@@ -223,6 +229,17 @@ function AppProvider({ children }) {
   const toggleTask = (id) => setTasks(p => p.map(t => t.id === id ? { ...t, done: !t.done } : t));
   const updateTask = (id, d) => setTasks(p => p.map(t => t.id === id ? { ...t, ...d } : t));
   const deleteTask = (id) => { setTasks(p => p.filter(t => t.id !== id)); addToast('מטלה נמחקה'); };
+  const reorderTasks = (srcId, tgtId) => {
+    setTasks(p => {
+      const srcIdx = p.findIndex(t => t.id === srcId);
+      const tgtIdx = p.findIndex(t => t.id === tgtId);
+      if (srcIdx === -1 || tgtIdx === -1 || srcIdx === tgtIdx) return p;
+      const next = [...p];
+      const [item] = next.splice(srcIdx, 1);
+      next.splice(tgtIdx, 0, item);
+      return next;
+    });
+  };
 
   const addVendor = (d) => { setVendors(p => [...p, { ...d, id: uid(), contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) }]); addToast('ספק נוסף בהצלחה'); };
   const updateVendor = (id, d) => { setVendors(p => p.map(v => v.id === id ? { ...v, ...d, contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) } : v)); addToast('ספק עודכן'); };
@@ -300,7 +317,7 @@ function AppProvider({ children }) {
     expenses, guests, tasks, vendors, tables, metrics,
     addExpense, updateExpense, deleteExpense,
     addGuest, updateGuest, deleteGuest,
-    addTask, toggleTask, updateTask, deleteTask,
+    addTask, toggleTask, updateTask, deleteTask, reorderTasks,
     addVendor, updateVendor, deleteVendor,
     addTable, updateTable, deleteTable, assignGuest, unassignGuest,
     saveStatus,
@@ -1114,7 +1131,7 @@ function Guests() {
 
 // ── Checklist ──────────────────────────────────────────────────────────────
 function TaskModal({ task, onSave, onClose }) {
-  const blank = { text: '', category: 'הכנות', due_date: '' };
+  const blank = { text: '', category: 'הכנות', due_date: '', urgency: 'רגילה' };
   const [form, setForm] = useState(task ? { ...task } : blank);
   const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   return (
@@ -1123,8 +1140,9 @@ function TaskModal({ task, onSave, onClose }) {
         <Field label="תיאור המשימה"><TextInput name="text" value={form.text} onChange={set} required placeholder="לדוגמה: לשלוח הזמנות" /></Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="קטגוריה"><SelectInput name="category" value={form.category} onChange={set} options={CHECKLIST_CATS} /></Field>
-          <Field label="תאריך יעד"><TextInput name="due_date" value={form.due_date} onChange={set} type="date" /></Field>
+          <Field label="דחיפות"><SelectInput name="urgency" value={form.urgency || 'רגילה'} onChange={set} options={TASK_URGENCIES} /></Field>
         </div>
+        <Field label="תאריך יעד"><TextInput name="due_date" value={form.due_date} onChange={set} type="date" /></Field>
         <div className="flex gap-2 justify-end pt-1">
           <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
           <Btn type="submit">{task ? 'שמור שינויים' : 'הוסף משימה'}</Btn>
@@ -1135,10 +1153,11 @@ function TaskModal({ task, onSave, onClose }) {
 }
 
 function Checklist() {
-  const { tasks, addTask, toggleTask, updateTask, deleteTask, confirm } = useApp();
+  const { tasks, addTask, toggleTask, updateTask, deleteTask, reorderTasks, confirm } = useApp();
   const [modal, setModal] = useState(null);
   const [catFilter, setCatFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dragId, setDragId] = useState(null);
 
   const handleSave = (data) => { if (modal === 'new') addTask(data); else updateTask(modal.id, data); setModal(null); };
 
@@ -1192,8 +1211,22 @@ function Checklist() {
         <Card className="p-12 text-center text-slate-400 border-dashed border-2 bg-transparent"><p className="text-lg font-medium">אין משימות</p><p className="text-sm mt-1">נסה חיפוש אחר או הוסף משימה חדשה</p></Card>
       ) : (
         <div className="space-y-3">
-          {filtered.map(t => (
-            <Card key={t.id} className={`p-4 flex items-center gap-4 transition-all duration-300 ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md'}`}>
+          {filtered.map((t, idx) => (
+            <Card 
+              key={t.id} 
+              draggable
+              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragId(t.id); }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+              onDrop={(e) => { e.preventDefault(); if (dragId && dragId !== t.id) reorderTasks(dragId, t.id); setDragId(null); }}
+              className={`p-4 flex items-center gap-4 transition-all duration-300 cursor-grab active:cursor-grabbing ${dragId === t.id ? 'opacity-50' : ''} ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md'}`}
+            >
+              <div className="text-slate-300 dark:text-slate-600 cursor-grab active:cursor-grabbing flex-shrink-0">
+                <svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor">
+                  <circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
+                  <circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/>
+                  <circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/>
+                </svg>
+              </div>
               <button onClick={() => toggleTask(t.id)}
                 className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'
                   }`}>
@@ -1201,9 +1234,10 @@ function Checklist() {
               </button>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium text-slate-900 dark:text-slate-100 ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{t.text}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{t.category}</span>
                   {t.due_date && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">📅 {t.due_date}</span>}
+                  <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-sm ${URGENCY_COLORS[t.urgency || 'רגילה']}`} title={`דחיפות: ${t.urgency || 'רגילה'}`}></span>
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
