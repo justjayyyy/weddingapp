@@ -529,7 +529,7 @@ function HeroSection() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl p-8 sm:p-12 min-h-[300px] sm:min-h-[400px] flex items-center shadow-2xl group bg-cover bg-[position:center_35%] transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
+      className="relative overflow-hidden rounded-3xl p-8 sm:p-12 min-h-[300px] sm:min-h-[400px] flex items-center shadow-2xl group bg-cover animate-pan-image transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
       style={{ backgroundImage: "url('/couple.jpg')" }}
     >
       {/* Elegant dark overlay to ensure text is always readable against any photo */}

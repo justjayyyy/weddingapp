@@ -104,3 +104,11 @@ body {
 .animate-fade-out {
   animation: fade-out 0.3s ease-in forwards;
 }
+
+@keyframes pan-image {
+  0%, 100% { background-position: center 32%; }
+  50% { background-position: center 38%; }
+}
+.animate-pan-image {
+  animation: pan-image 15s ease-in-out infinite;
+}
