@@ -4,8 +4,8 @@ import clientPromise from '@/lib/mongodb';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db('weddingApp');
-    const data = await db.collection('appData').findOne({});
+    const db = client.db('wedding');
+    const data = await db.collection('wedding-data').findOne({});
 
     if (!data) {
       // Return empty default state if no data exists
@@ -37,10 +37,10 @@ export async function PUT(request) {
     }
 
     const client = await clientPromise;
-    const db = client.db('weddingApp');
+    const db = client.db('wedding');
     
     // We just keep one document for the whole app
-    await db.collection('appData').updateOne(
+    await db.collection('wedding-data').updateOne(
       {},
       { $set: data },
       { upsert: true }

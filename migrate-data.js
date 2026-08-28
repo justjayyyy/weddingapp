@@ -24,10 +24,10 @@ async function migrate() {
 
   try {
     await client.connect();
-    const db = client.db('weddingApp');
+    const db = client.db('wedding');
     
     console.log('Uploading data to MongoDB...');
-    await db.collection('appData').updateOne(
+    await db.collection('wedding-data').updateOne(
       {},
       { $set: data },
       { upsert: true }
