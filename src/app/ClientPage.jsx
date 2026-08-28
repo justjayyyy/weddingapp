@@ -528,10 +528,13 @@ function HeroSection() {
   }, [WEDDING_DATE]);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl p-8 sm:p-10 shadow-2xl animate-fade-in-up group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 animate-gradient">
-      {/* Decorative blurred blobs */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-20 rounded-full blur-3xl group-hover:opacity-30 transition-opacity duration-1000"></div>
-      <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-64 h-64 bg-indigo-900 opacity-30 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+    <div 
+      className="relative overflow-hidden rounded-3xl p-8 sm:p-10 shadow-2xl group bg-cover bg-center transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
+      style={{ backgroundImage: "url('/couple.jpg')" }}
+    >
+      {/* Elegant dark overlay to ensure text is always readable against any photo */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-slate-900/20"></div>
+      <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply group-hover:bg-indigo-900/10 transition-colors duration-700"></div>
       
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
         <div className="text-center md:text-right space-y-3">
