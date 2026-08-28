@@ -8,8 +8,21 @@ const assistant = Assistant({
 });
 
 export const metadata = {
-  title: "💍 Wedding Planner",
+  title: "Wedding Planner",
   description: "Premium Wedding Management App",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Wedding Planner",
+  },
+};
+
+export const viewport = {
+  themeColor: "#4f46e5",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {

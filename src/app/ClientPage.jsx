@@ -151,8 +151,22 @@ function AppProvider({ children }) {
   const [tasks,    setTasks]      = useState([]);
   const [vendors,  setVendors]    = useState([]);
   const [tables,   setTables]     = useState([]);
+  const [toasts,   setToasts]     = useState([]);
+  const [confirmState, setConfirmState] = useState(null);
+  
+  const confirmDialog = (msg) => new Promise(resolve => setConfirmState({ msg, resolve }));
+  const handleConfirm = (res) => { if (confirmState) { confirmState.resolve(res); setConfirmState(null); } };
   const hydrated = useRef(false);
   const saveGen  = useRef(0);
+
+  const addToast = (msg, type = 'success') => {
+    const id = uid();
+    setToasts(p => [...p, { id, msg, type }]);
+    setTimeout(() => {
+      setToasts(p => p.map(t => t.id === id ? { ...t, fading: true } : t));
+      setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 300);
+    }, 3000);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -197,26 +211,26 @@ function AppProvider({ children }) {
     return () => clearTimeout(t);
   }, [expenses, guests, tasks, vendors, tables, ready, loadError]);
 
-  const addExpense    = (d) => setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]);
-  const updateExpense = (id, d) => setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e));
-  const deleteExpense = (id) => setExpenses(p => p.filter(e => e.id !== id));
+  const addExpense    = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
+  const updateExpense = (id, d) => { setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e)); addToast('הוצאה עודכנה'); };
+  const deleteExpense = (id) => { setExpenses(p => p.filter(e => e.id !== id)); addToast('הוצאה נמחקה'); };
 
-  const addGuest    = (d) => setGuests(p => [...p, { ...d, id: uid(), estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) }]);
-  const updateGuest = (id, d) => setGuests(p => p.map(g => g.id === id ? { ...g, ...d, estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) } : g));
-  const deleteGuest = (id) => setGuests(p => p.filter(g => g.id !== id));
+  const addGuest    = (d) => { setGuests(p => [...p, { ...d, id: uid(), estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) }]); addToast('אורח נוסף בהצלחה'); };
+  const updateGuest = (id, d) => { setGuests(p => p.map(g => g.id === id ? { ...g, ...d, estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) } : g)); addToast('פרטי אורח עודכנו'); };
+  const deleteGuest = (id) => { setGuests(p => p.filter(g => g.id !== id)); addToast('אורח נמחק'); };
 
-  const addTask    = (d) => setTasks(p => [...p, { ...d, id: uid(), done: false }]);
+  const addTask    = (d) => { setTasks(p => [...p, { ...d, id: uid(), done: false }]); addToast('מטלה נוספה'); };
   const toggleTask = (id) => setTasks(p => p.map(t => t.id === id ? { ...t, done: !t.done } : t));
   const updateTask = (id, d) => setTasks(p => p.map(t => t.id === id ? { ...t, ...d } : t));
-  const deleteTask = (id) => setTasks(p => p.filter(t => t.id !== id));
+  const deleteTask = (id) => { setTasks(p => p.filter(t => t.id !== id)); addToast('מטלה נמחקה'); };
 
-  const addVendor    = (d) => setVendors(p => [...p, { ...d, id: uid(), contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) }]);
-  const updateVendor = (id, d) => setVendors(p => p.map(v => v.id === id ? { ...v, ...d, contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) } : v));
-  const deleteVendor = (id) => setVendors(p => p.filter(v => v.id !== id));
+  const addVendor    = (d) => { setVendors(p => [...p, { ...d, id: uid(), contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) }]); addToast('ספק נוסף בהצלחה'); };
+  const updateVendor = (id, d) => { setVendors(p => p.map(v => v.id === id ? { ...v, ...d, contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) } : v)); addToast('ספק עודכן'); };
+  const deleteVendor = (id) => { setVendors(p => p.filter(v => v.id !== id)); addToast('ספק נמחק'); };
 
-  const addTable      = (d) => setTables(p => [...p, { ...d, id: uid(), capacity: num(d.capacity), guest_ids: [] }]);
+  const addTable      = (d) => { setTables(p => [...p, { ...d, id: uid(), capacity: num(d.capacity), guest_ids: [] }]); addToast('שולחן חדש נוסף'); };
   const updateTable   = (id, d) => setTables(p => p.map(t => t.id === id ? { ...t, ...d, capacity: num(d.capacity) } : t));
-  const deleteTable   = (id) => setTables(p => p.filter(t => t.id !== id));
+  const deleteTable   = (id) => { setTables(p => p.filter(t => t.id !== id)); addToast('שולחן נמחק'); };
   const assignGuest   = (guestId, tableId) => setTables(p => p.map(t => ({
     ...t, guest_ids: t.id === tableId
       ? (t.guest_ids.includes(guestId) ? t.guest_ids : [...t.guest_ids, guestId])
@@ -283,11 +297,51 @@ function AppProvider({ children }) {
     addVendor, updateVendor, deleteVendor,
     addTable, updateTable, deleteTable, assignGuest, unassignGuest,
     saveStatus,
+    toasts, addToast, confirm: confirmDialog, confirmState, handleConfirm,
   };
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
 
 const useApp = () => useContext(AppCtx);
+
+// ── Toasts Component ───────────────────────────────────────────────────────
+function ToastContainer() {
+  const { toasts } = useApp();
+  if (!toasts.length) return null;
+  return (
+    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none">
+      {toasts.map(t => (
+        <div key={t.id}
+          className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg shadow-black/10 text-sm font-semibold pointer-events-auto
+            ${t.fading ? 'animate-fade-out' : 'animate-slide-up'}
+            ${t.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'}
+          `}>
+          {t.type === 'success' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
+          {t.type === 'error' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+          {t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Confirm Modal ──────────────────────────────────────────────────────────
+function ConfirmModal() {
+  const { confirmState, handleConfirm } = useApp();
+  if (!confirmState) return null;
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in-up">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">אישור פעולה</h3>
+        <p className="text-slate-600 dark:text-slate-300 mb-6">{confirmState.msg}</p>
+        <div className="flex items-center gap-3 w-full">
+          <button onClick={() => handleConfirm(false)} className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold transition-all">ביטול</button>
+          <button onClick={() => handleConfirm(true)} className="flex-1 px-4 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition-all shadow-md">אישור מחיקה</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── SVG Charts ─────────────────────────────────────────────────────────────
 function DonutChart({ data }) {
@@ -703,7 +757,7 @@ function ExpenseModal({ expense, onSave, onClose }) {
 }
 
 function Expenses() {
-  const { expenses, addExpense, updateExpense, deleteExpense, metrics } = useApp();
+  const { expenses, addExpense, updateExpense, deleteExpense, metrics, confirm } = useApp();
   const [modal, setModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -755,7 +809,7 @@ function Expenses() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setModal(exp)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                    <button onClick={() => { if(window.confirm('למחוק הוצאה זו?')) deleteExpense(exp.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                    <button onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if(yes) deleteExpense(exp.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
                   </div>
                 </div>
                 <div className="flex justify-between text-xs mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
@@ -793,7 +847,7 @@ function Expenses() {
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Btn variant="ghost" size="sm" onClick={() => setModal(exp)}>ערוך</Btn>
-                        <Btn variant="danger" size="sm" onClick={() => { if(window.confirm('למחוק הוצאה זו?')) deleteExpense(exp.id); }}>✕</Btn>
+                        <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if(yes) deleteExpense(exp.id); }) }}>✕</Btn>
                       </div>
                     </td>
                   </tr>
@@ -849,7 +903,7 @@ function GuestModal({ guest, onSave, onClose }) {
 }
 
 function Guests() {
-  const { guests, addGuest, updateGuest, deleteGuest, metrics } = useApp();
+  const { guests, addGuest, updateGuest, deleteGuest, metrics, addToast, confirm } = useApp();
   const [modal, setModal]           = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState('הכל');
@@ -866,13 +920,41 @@ function Guests() {
   );
   const totalActual = guests.reduce((s, g) => s + num(g.actual_gift), 0);
   
+  const exportExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(guests.map(g => ({
+        'שם האורח': g.name,
+        'צד': g.side,
+        'קבוצה': g.group,
+        'כמות אורחים': g.party_size,
+        'סטטוס הגעה': g.rsvp_status,
+        'מתנה משוערת': g.estimated_gift,
+        'מתנה בפועל': g.actual_gift,
+        'הגבלות תזונה / הערות': g.dietary || ''
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "אורחים");
+      XLSX.writeFile(wb, "wedding_guests.xlsx");
+      addToast('הקובץ יוצא בהצלחה!', 'success');
+    } catch (err) {
+      addToast('שגיאה בייצוא הקובץ', 'error');
+    }
+  };
+  
   return (
     <div className="space-y-6">
       {modal && <GuestModal guest={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">אורחים ואומדן מתנות</h2>
-        <Btn onClick={() => setModal('new')}>+ הוסף אורח</Btn>
+        <div className="flex gap-2">
+          <button onClick={exportExcel} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            ייצא Excel
+          </button>
+          <Btn onClick={() => setModal('new')}>+ הוסף אורח</Btn>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -935,7 +1017,7 @@ function Guests() {
                 <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500">בפועל</span><span className="font-semibold text-emerald-600 text-sm">{num(g.actual_gift) > 0 ? fmt(g.actual_gift) : '—'}</span></div>
                 <div className="flex gap-1">
                   <button onClick={() => setModal(g)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✎</button>
-                  <button onClick={() => { if(window.confirm('להסיר אורח זה?')) deleteGuest(g.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
+                  <button onClick={() => { confirm('להסיר אורח זה?').then(yes => { if(yes) deleteGuest(g.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
                 </div>
               </div>
             </div>
@@ -975,7 +1057,7 @@ function Guests() {
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Btn variant="ghost" size="sm" onClick={() => setModal(g)}>ערוך</Btn>
-                      <Btn variant="danger" size="sm" onClick={() => { if(window.confirm('להסיר אורח זה?')) deleteGuest(g.id); }}>✕</Btn>
+                      <Btn variant="danger" size="sm" onClick={() => { confirm('להסיר אורח זה?').then(yes => { if(yes) deleteGuest(g.id); }) }}>✕</Btn>
                     </div>
                   </td>
                 </tr>
@@ -1026,7 +1108,7 @@ function TaskModal({ task, onSave, onClose }) {
 }
 
 function Checklist() {
-  const { tasks, addTask, toggleTask, updateTask, deleteTask } = useApp();
+  const { tasks, addTask, toggleTask, updateTask, deleteTask, confirm } = useApp();
   const [modal, setModal]         = useState(null);
   const [catFilter, setCatFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1100,7 +1182,7 @@ function Checklist() {
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button onClick={() => setModal(t)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                <button onClick={() => { if(window.confirm('למחוק משימה זו?')) deleteTask(t.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                <button onClick={() => { confirm('למחוק משימה זו?').then(yes => { if(yes) deleteTask(t.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
               </div>
             </Card>
           ))}
@@ -1145,7 +1227,7 @@ function VendorModal({ vendor, onSave, onClose }) {
 }
 
 function Vendors() {
-  const { vendors, addVendor, updateVendor, deleteVendor } = useApp();
+  const { vendors, addVendor, updateVendor, deleteVendor, confirm } = useApp();
   const [modal, setModal]             = useState(null);
   const [statusFilter, setStatusFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1230,7 +1312,7 @@ function Vendors() {
                   </div>
                   <div className="flex flex-col items-center gap-2 flex-shrink-0">
                     <button onClick={() => setModal(v)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                    <button onClick={() => { if(window.confirm('למחוק ספק זה?')) deleteVendor(v.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                    <button onClick={() => { confirm('למחוק ספק זה?').then(yes => { if(yes) deleteVendor(v.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
                   </div>
                 </div>
               </Card>
@@ -1262,7 +1344,7 @@ function TableModal({ table, onSave, onClose }) {
 }
 
 function Seating() {
-  const { guests, tables, addTable, updateTable, deleteTable, assignGuest, unassignGuest } = useApp();
+  const { guests, tables, addTable, updateTable, deleteTable, assignGuest, unassignGuest, confirm } = useApp();
   const [modal, setModal] = useState(null);
   const handleSave = (data) => { if (modal === 'new') addTable(data); else updateTable(modal.id, data); setModal(null); };
 
@@ -1326,7 +1408,7 @@ function Seating() {
                   </div>
                   <div className="flex gap-1">
                     <Btn variant="ghost" size="sm" onClick={() => setModal(t)}>ערוך</Btn>
-                    <Btn variant="danger" size="sm" onClick={() => { if(window.confirm('למחוק שולחן זה?')) deleteTable(t.id); }}>✕</Btn>
+                    <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק שולחן זה?').then(yes => { if(yes) deleteTable(t.id); }) }}>✕</Btn>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-3">
@@ -1433,6 +1515,9 @@ function App() {
               </button>
             ))}
           </nav>
+          
+          <ToastContainer />
+          <ConfirmModal />
         </div>
       </AppProvider>
     </DarkProvider>
