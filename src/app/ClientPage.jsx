@@ -265,11 +265,11 @@ function AppProvider({ children }) {
 
     const attending = guests.filter(g => g.rsvp_status === 'מגיע');
     const pending = guests.filter(g => g.rsvp_status === 'ממתין');
-    const rsvpYesCount = attending.length;
-    const pendingCount = pending.length;
+    const rsvpYesCount = attending.reduce((s, g) => s + num(g.party_size || 1), 0);
+    const pendingCount = pending.reduce((s, g) => s + num(g.party_size || 1), 0);
     const expectedAttendees = guests.reduce((sum, g) => {
       if (g.rsvp_status === 'לא מגיע') return sum;
-      return sum + ((g.arrival_probability ?? 100) / 100);
+      return sum + (num(g.party_size || 1) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
     const safeVenueCommitment = Math.floor(expectedAttendees * 0.9);
     const totalExpectedGifts = guests.reduce((sum, g) => {
@@ -291,7 +291,7 @@ function AppProvider({ children }) {
     return {
       totalExpenses, totalOutOfPocket, totalBalanceDue,
       contingencyBuffer, totalExpensesWithBuffer,
-      rsvpYesCount, pendingCount, totalInvited: guests.length,
+      rsvpYesCount, pendingCount, totalInvited: guests.reduce((s, g) => s + num(g.party_size || 1), 0),
       expectedAttendees, safeVenueCommitment, totalExpectedGifts, totalActualGifts,
       bepPerGuest, netProfitLoss, expensesByCategory,
       tasksDone, tasksTotal,
@@ -495,10 +495,42 @@ function TextInput({ name, value, onChange, type = 'text', placeholder, required
   );
 }
 function SelectInput({ name, value, onChange, options }) {
+  const appCtx = useApp();
+  
+  const handleSelect = (e) => {
+    if (e.target.value === '__add_new__') {
+      const newVal = prompt('הזן אפשרות חדשה:');
+      if (newVal && newVal.trim() !== '') {
+        onChange({ target: { name, value: newVal.trim() } });
+      } else {
+        e.target.value = value;
+      }
+    } else {
+      onChange(e);
+    }
+  };
+
+  const customVals = [];
+  if (appCtx) {
+    const { expenses, guests, tasks, vendors } = appCtx;
+    if (name === 'category') {
+      if (expenses) expenses.forEach(e => customVals.push(e.category));
+      if (tasks) tasks.forEach(t => customVals.push(t.category));
+      if (vendors) vendors.forEach(v => customVals.push(v.category));
+    }
+    if (name === 'group' && guests) guests.forEach(g => customVals.push(g.group));
+    if (name === 'side' && guests) guests.forEach(g => customVals.push(g.side));
+    if (name === 'status' && vendors) vendors.forEach(v => customVals.push(v.status));
+  }
+
+  const allOptions = [...new Set([...options, ...customVals, value])].filter(Boolean);
+
   return (
-    <select name={name} value={value} onChange={onChange}
+    <select name={name} value={value || ''} onChange={handleSelect}
       className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {allOptions.map(o => <option key={o} value={o}>{o}</option>)}
+      <option disabled>──────────</option>
+      <option value="__add_new__" className="font-bold text-indigo-600 dark:text-indigo-400">+ הוסף חדש...</option>
     </select>
   );
 }
@@ -906,22 +938,25 @@ function Expenses() {
 
 // ── Guests ─────────────────────────────────────────────────────────────────
 function GuestModal({ guest, onSave, onClose }) {
-  const blank = { name: '', group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100 };
-  const [form, setForm] = useState(guest ? { ...guest } : blank);
+  const blank = { name: '', phone: '', party_size: 1, group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100 };
+  const [form, setForm] = useState(guest ? { party_size: 1, ...guest } : blank);
   const set = e => {
     const { name, value } = e.target;
-    if (name === 'group') setForm(p => ({ ...p, group: value, estimated_gift: GROUP_GIFT_DEFAULTS[value] || 350 }));
+    if (name === 'group') setForm(p => ({ ...p, group: value, estimated_gift: (GROUP_GIFT_DEFAULTS[value] || 350) * num(p.party_size || 1) }));
+    else if (name === 'party_size') setForm(p => ({ ...p, party_size: value, estimated_gift: (GROUP_GIFT_DEFAULTS[p.group] || 350) * num(value || 1) }));
     else setForm(p => ({ ...p, [name]: value }));
   };
   return (
     <Modal title={guest ? 'ערוך אורח' : 'הוסף אורח'} onClose={onClose}>
       <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><Field label="שם האורח"><TextInput name="name" value={form.name} onChange={set} required placeholder="שם מלא או זוג" /></Field></div>
+          <Field label="שם האורח / משפחה"><TextInput name="name" value={form.name} onChange={set} required placeholder="שם מלא או זוג" /></Field>
+          <Field label="טלפון"><TextInput name="phone" value={form.phone} onChange={set} type="tel" placeholder="050-0000000" /></Field>
+          <Field label="כמות אורחים"><TextInput name="party_size" value={form.party_size} onChange={set} type="number" min="1" required placeholder="1" /></Field>
           <Field label="קבוצה"><SelectInput name="group" value={form.group} onChange={set} options={GUEST_GROUPS.includes(form.group) ? GUEST_GROUPS : [form.group, ...GUEST_GROUPS]} /></Field>
           <Field label="צד"><SelectInput name="side" value={form.side} onChange={set} options={GUEST_SIDES} /></Field>
           <Field label="סטטוס"><SelectInput name="rsvp_status" value={form.rsvp_status} onChange={set} options={RSVP_STATUSES} /></Field>
-          <Field label="מתנה מוערכת (₪)" hint="— אוטומטי לפי קבוצה"><TextInput name="estimated_gift" value={form.estimated_gift} onChange={set} type="number" min="0" /></Field>
+          <Field label="מתנה מוערכת (₪)" hint="— מחושב אוטומטית"><TextInput name="estimated_gift" value={form.estimated_gift} onChange={set} type="number" min="0" /></Field>
           <div className="col-span-2"><Field label="מתנה שהתקבלה בפועל (₪)"><TextInput name="actual_gift" value={form.actual_gift} onChange={set} type="number" min="0" placeholder="0" /></Field></div>
           <div className="col-span-2">
             <Field label={`סבירות הגעה: ${form.arrival_probability ?? 100}%`}>
@@ -961,6 +996,7 @@ function Guests() {
       const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(guests.map(g => ({
         'שם האורח': g.name,
+        'טלפון': g.phone || '',
         'צד': g.side,
         'קבוצה': g.group,
         'כמות אורחים': g.party_size,
@@ -1043,9 +1079,10 @@ function Guests() {
             <div key={g.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100">{g.name}</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100">{g.name} <span className="text-sm font-normal text-slate-500">({g.party_size || 1})</span></h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-slate-500">{g.group} • {g.side}</span>
+                    {g.phone && <a href={`tel:${g.phone}`} className="text-indigo-500 hover:text-indigo-600 drop-shadow-sm" title="התקשר" onClick={e => e.stopPropagation()}>📞</a>}
                   </div>
                 </div>
                 <div className="flex gap-1 items-center">
@@ -1074,6 +1111,7 @@ function Guests() {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 text-[11px] uppercase tracking-widest text-slate-500">
                 <th className="text-right px-4 py-3 font-semibold">שם</th>
+                <th className="text-center px-4 py-3 font-semibold">כמות</th>
                 <th className="text-right px-4 py-3 font-semibold">קבוצה</th>
                 <th className="text-right px-4 py-3 font-semibold">צד</th>
                 <th className="text-center px-4 py-3 font-semibold">סטטוס</th>
@@ -1086,7 +1124,13 @@ function Guests() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {filtered.map(g => (
                 <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{g.name}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                    <div className="flex items-center gap-2">
+                      {g.name} 
+                      {g.phone && <a href={`tel:${g.phone}`} className="text-indigo-500 text-[11px] hover:text-indigo-600 drop-shadow-sm" title={g.phone} onClick={e => e.stopPropagation()}>📞</a>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center text-xs font-semibold text-slate-500">{g.party_size || 1}</td>
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{g.group}</td>
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{g.side}</td>
                   <td className="px-4 py-3 text-center">
