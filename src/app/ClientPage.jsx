@@ -292,8 +292,8 @@ const useApp = () => useContext(AppCtx);
 // ── SVG Charts ─────────────────────────────────────────────────────────────
 function DonutChart({ data }) {
   const total = data.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return <div className="flex items-center justify-center h-44 text-gray-300 text-sm">אין נתוני הוצאות עדיין</div>;
-  const SIZE = 180, R = 76, IR = 38, CX = SIZE/2, CY = SIZE/2;
+  if (total === 0) return <div className="flex items-center justify-center h-44 text-slate-400 text-sm border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">אין נתוני הוצאות עדיין</div>;
+  const SIZE = 200, R = 85, IR = 45, CX = SIZE/2, CY = SIZE/2;
   const slices = []; let angle = -Math.PI/2;
   data.forEach((item) => {
     const sweep = (item.value/total)*2*Math.PI, s = angle, e = angle+sweep; angle = e;
@@ -303,21 +303,29 @@ function DonutChart({ data }) {
     slices.push({ ...item, d, lx: CX+lr*cos(mid), ly: CY+lr*sin(mid), pct: (item.value/total*100).toFixed(0) });
   });
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-5">
-      <svg width={SIZE} height={SIZE} className="flex-shrink-0">
+    <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8">
+      <div className="relative group">
+        <svg width={SIZE} height={SIZE} className="flex-shrink-0 drop-shadow-xl transition-transform duration-500 group-hover:scale-105">
+          {slices.map(s => (
+            <g key={s.name} className="transition-all duration-300 hover:opacity-80">
+              <path d={s.d} fill={CAT_COLORS[s.name]||'#6366f1'} stroke="currentColor" className="stroke-white dark:stroke-slate-800" strokeWidth="3"><title>{s.name}: {fmt(s.value)}</title></path>
+              {parseFloat(s.pct) >= 8 && <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="800" fill="white" style={{textShadow: '0px 1px 3px rgba(0,0,0,0.4)'}}>{s.pct}%</text>}
+            </g>
+          ))}
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <span className="block text-[10px] text-slate-400 font-semibold uppercase tracking-wider">סה״כ</span>
+            <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">{fmt(total)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3 w-full min-w-0">
         {slices.map(s => (
-          <g key={s.name}>
-            <path d={s.d} fill={CAT_COLORS[s.name]||'#6366f1'} stroke="white" strokeWidth="2"><title>{s.name}: {fmt(s.value)}</title></path>
-            {parseFloat(s.pct) >= 8 && <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="white">{s.pct}%</text>}
-          </g>
-        ))}
-      </svg>
-      <div className="space-y-2.5 w-full min-w-0">
-        {slices.map(s => (
-          <div key={s.name} className="flex items-center gap-2 text-xs min-w-0">
-            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: CAT_COLORS[s.name]||'#6366f1' }}></span>
-            <span className="text-gray-600 dark:text-gray-300 truncate flex-1">{s.name}</span>
-            <span className="font-bold text-gray-800 dark:text-gray-100 flex-shrink-0">{fmt(s.value)}</span>
+          <div key={s.name} className="flex items-center gap-3 text-xs min-w-0 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ background: CAT_COLORS[s.name]||'#6366f1' }}></span>
+            <span className="text-slate-600 dark:text-slate-300 font-medium truncate flex-1">{s.name}</span>
+            <span className="font-bold text-slate-900 dark:text-slate-100 flex-shrink-0 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md">{fmt(s.value)}</span>
           </div>
         ))}
       </div>
@@ -327,26 +335,34 @@ function DonutChart({ data }) {
 
 function BarChart({ items }) {
   const maxVal = Math.max(...items.map(d => d.amount), 1);
-  const W = 320, H = 200, pad = {t:32,r:16,b:52,l:58}, cW = W-pad.l-pad.r, cH = H-pad.t-pad.b, slot = cW/items.length, bW = slot*0.48, TICKS = 4;
+  const W = 320, H = 220, pad = {t:32,r:16,b:56,l:60}, cW = W-pad.l-pad.r, cH = H-pad.t-pad.b, slot = cW/items.length, bW = slot*0.4, TICKS = 4;
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:'visible' }}>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:'visible' }} className="drop-shadow-sm">
+      <defs>
+        {items.map((item, i) => (
+          <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={item.fill} stopOpacity="1" />
+            <stop offset="100%" stopColor={item.fill} stopOpacity="0.6" />
+          </linearGradient>
+        ))}
+      </defs>
       {Array.from({length:TICKS+1},(_,i) => {
         const v = maxVal*i/TICKS, y = pad.t+cH-(v/maxVal)*cH;
-        return <g key={i}><line x1={pad.l} y1={y} x2={pad.l+cW} y2={y} stroke="#f1f5f9" strokeWidth="1"/><text x={pad.l-5} y={y} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="#94a3b8">₪{(v/1000).toFixed(0)}k</text></g>;
+        return <g key={i}><line x1={pad.l} y1={y} x2={pad.l+cW} y2={y} className="stroke-slate-200 dark:stroke-slate-700/50" strokeWidth="1" strokeDasharray="4 4" /><text x={pad.l-8} y={y} textAnchor="end" dominantBaseline="middle" fontSize="10" className="fill-slate-400 dark:fill-slate-500 font-medium">₪{(v/1000).toFixed(0)}k</text></g>;
       })}
       {items.map((item,i) => {
         const bH = (item.amount/maxVal)*cH, x = pad.l+i*slot+slot/2-bW/2, y = pad.t+cH-bH;
         return (
-          <g key={item.name}>
-            <rect x={x} y={y} width={bW} height={bH} fill={item.fill} rx="4"><title>{item.name}: {fmt(item.amount)}</title></rect>
-            <text x={x+bW/2} y={y-6} textAnchor="middle" fontSize="9" fontWeight="700" fill="#374151">{fmt(item.amount)}</text>
-            <text x={x+bW/2} y={pad.t+cH+14} textAnchor="middle" fontSize="10" fill="#6b7280">
-              {item.name.split(' ').map((w,wi) => <tspan key={wi} x={x+bW/2} dy={wi===0?0:12}>{w}</tspan>)}
+          <g key={item.name} className="transition-all duration-500 group">
+            <rect x={x} y={y} width={bW} height={bH} fill={`url(#grad-${i})`} rx="6" className="cursor-pointer transition-all duration-300 group-hover:opacity-80"><title>{item.name}: {fmt(item.amount)}</title></rect>
+            <text x={x+bW/2} y={y-8} textAnchor="middle" fontSize="11" fontWeight="800" className="fill-slate-700 dark:fill-slate-200">{fmt(item.amount)}</text>
+            <text x={x+bW/2} y={pad.t+cH+16} textAnchor="middle" fontSize="10" className="fill-slate-500 dark:fill-slate-400 font-semibold">
+              {item.name.split(' ').map((w,wi) => <tspan key={wi} x={x+bW/2} dy={wi===0?0:14}>{w}</tspan>)}
             </text>
           </g>
         );
       })}
-      <line x1={pad.l} y1={pad.t+cH} x2={pad.l+cW} y2={pad.t+cH} stroke="#e2e8f0" strokeWidth="1"/>
+      <line x1={pad.l} y1={pad.t+cH} x2={pad.l+cW} y2={pad.t+cH} className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="2"/>
     </svg>
   );
 }
@@ -359,16 +375,16 @@ function KpiCard({ title, value, sub, color }) {
   const p = {
     indigo:'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
     purple:'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-    green: 'border-green-200  bg-green-50  text-green-700  dark:border-green-800  dark:bg-green-900/40  dark:text-green-300',
+    green: 'border-emerald-200  bg-emerald-50  text-emerald-700  dark:border-emerald-800  dark:bg-emerald-900/40  dark:text-emerald-300',
     amber: 'border-amber-200  bg-amber-50  text-amber-700  dark:border-amber-800  dark:bg-amber-900/40  dark:text-amber-300',
     blue:  'border-blue-200   bg-blue-50   text-blue-700   dark:border-blue-800   dark:bg-blue-900/40   dark:text-blue-300',
-    red:   'border-red-200    bg-red-50    text-red-700    dark:border-red-800    dark:bg-red-900/40    dark:text-red-300',
+    red:   'border-rose-200    bg-rose-50    text-rose-700    dark:border-rose-800    dark:bg-rose-900/40    dark:text-rose-300',
   };
   return (
-    <div className={`rounded-2xl border-2 p-5 ${p[color]||p.indigo}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-widest opacity-60">{title}</p>
-      <p className="text-2xl font-bold mt-1 leading-tight">{value}</p>
-      {sub && <p className="text-[11px] mt-1.5 opacity-70 leading-snug">{sub}</p>}
+    <div className={`rounded-3xl border p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${p[color]||p.indigo}`}>
+      <p className="text-[11px] font-bold uppercase tracking-widest opacity-60 mb-2">{title}</p>
+      <p className="text-3xl font-extrabold leading-tight">{value}</p>
+      {sub && <p className="text-[10px] mt-2 font-medium opacity-80 leading-snug bg-black/5 dark:bg-white/5 inline-block px-2 py-1 rounded">{sub}</p>}
     </div>
   );
 }
@@ -428,11 +444,13 @@ function FilterPill({ active, color='indigo', onClick, children }) {
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 // ── Countdown Widget ───────────────────────────────────────────────────────
-function Countdown() {
-  const WEDDING_DATE = new Date('2027-08-28T18:00:00');
+function HeroSection() {
+  // If the date isn't set, this should be null.
+  const WEDDING_DATE = null; 
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
+    if (!WEDDING_DATE) return;
     const calc = () => {
       const diff = WEDDING_DATE - new Date();
       if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
@@ -446,36 +464,55 @@ function Countdown() {
     setTimeLeft(calc());
     const timer = setInterval(() => setTimeLeft(calc()), 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  if (!timeLeft) return null;
+  }, [WEDDING_DATE]);
 
   return (
-    <div className="bg-gradient-to-r from-rose-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl"></div>
-      <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-indigo-900 opacity-20 rounded-full blur-2xl"></div>
+    <div className="relative overflow-hidden rounded-3xl p-8 sm:p-10 shadow-2xl animate-fade-in-up group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 animate-gradient">
+      {/* Decorative blurred blobs */}
+      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-20 rounded-full blur-3xl group-hover:opacity-30 transition-opacity duration-1000"></div>
+      <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-64 h-64 bg-indigo-900 opacity-30 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
       
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="text-center md:text-right">
-          <h3 className="text-2xl font-bold mb-1">החתונה שלכם מתקרבת! 💍</h3>
-          <p className="text-indigo-100 text-sm">28 באוגוסט 2027</p>
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
+        <div className="text-center md:text-right space-y-3">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
+            המסע לחופה מתחיל ✨
+          </h2>
+          {!WEDDING_DATE ? (
+            <p className="text-indigo-100 text-lg md:text-xl font-medium bg-white/10 backdrop-blur-sm inline-block px-4 py-1.5 rounded-full border border-white/20">
+              תאריך טרם נקבע
+            </p>
+          ) : (
+            <p className="text-indigo-100 text-lg md:text-xl font-medium drop-shadow-sm">
+              {WEDDING_DATE.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          )}
         </div>
         
-        <div className="flex gap-4 sm:gap-6" dir="ltr">
-          {[
-            { label: 'ימים', value: timeLeft.d },
-            { label: 'שעות', value: timeLeft.h },
-            { label: 'דקות', value: timeLeft.m },
-            { label: 'שניות', value: timeLeft.s }
-          ].map((unit, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className="bg-white/20 backdrop-blur-md rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center border border-white/20 shadow-inner">
-                <span className="text-2xl sm:text-3xl font-bold">{unit.value}</span>
-              </div>
-              <span className="text-xs mt-2 text-indigo-100 font-medium">{unit.label}</span>
+        {!WEDDING_DATE ? (
+          <div className="flex-shrink-0">
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              + קבעו תאריך
+            </button>
+          </div>
+        ) : (
+          timeLeft && (
+            <div className="flex gap-4 sm:gap-6" dir="ltr">
+              {[
+                { label: 'ימים', value: timeLeft.d },
+                { label: 'שעות', value: timeLeft.h },
+                { label: 'דקות', value: timeLeft.m },
+                { label: 'שניות', value: timeLeft.s }
+              ].map((unit, i) => (
+                <div key={i} className="flex flex-col items-center group/item">
+                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center border border-white/30 shadow-inner group-hover/item:bg-white/20 transition-colors duration-300">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-md">{unit.value}</span>
+                  </div>
+                  <span className="text-xs sm:text-sm mt-3 text-indigo-100 font-semibold uppercase tracking-wider">{unit.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
+        )}
       </div>
     </div>
   );
@@ -495,69 +532,150 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">לוח בקרה ראשי</h2>
-        <span className="text-[11px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-semibold px-3 py-1 rounded-full animate-pulse">חי</span>
+      <div className="flex items-center justify-between pb-2">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 drop-shadow-sm">לוח בקרה ראשי</h2>
+        <span className="text-[11px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-1 rounded-full shadow-sm animate-pulse flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></span> חי
+        </span>
       </div>
 
-      <Countdown />
+      <HeroSection />
 
-      {tasksTotal > 0 && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">התקדמות מטלות</span>
-            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{tasksDone}/{tasksTotal}</span>
+      {/* Bento Box Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 auto-rows-min">
+        
+        {/* Profit/Loss Feature Card - Spans 2 columns on desktop */}
+        <div className={`col-span-1 md:col-span-2 rounded-3xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+          isProfit 
+            ? 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/40' 
+            : 'bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/20 dark:to-red-900/40'
+        }`}>
+          <p className={`text-xs font-bold uppercase tracking-widest ${isProfit ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
+            תחזית תקציב עכשווית
+          </p>
+          <div className="mt-4">
+            <h3 className={`text-5xl lg:text-6xl font-extrabold tracking-tight ${isProfit ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              {isProfit ? '+' : ''}{fmt(netProfitLoss)}
+            </h3>
+            <p className={`text-sm mt-3 font-medium bg-white/40 dark:bg-black/20 inline-block px-3 py-1.5 rounded-lg ${isProfit ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
+              {isProfit ? '✨ מצוין! נראה שתכסו את כל ההוצאות.' : `⚠️ זהירות, צפוי מחסור של ${fmt(Math.abs(netProfitLoss))}.`}
+            </p>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div className="bg-indigo-600 h-2 rounded-full transition-all" style={{ width: `${tasksTotal ? tasksDone/tasksTotal*100 : 0}%` }}></div>
-          </div>
-        </Card>
-      )}
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        <KpiCard title="סה״כ הוצאות צפויות" value={fmt(totalExpensesWithBuffer)} sub={`כולל 10% כרית ביטחון: ${fmt(contingencyBuffer)}`} color="indigo" />
-        <KpiCard title="שולם מראש (מקדמות)"  value={fmt(totalOutOfPocket)}        sub="שולם לפני יום החתונה"                            color="purple" />
-        <KpiCard title="יתרה לתשלום"          value={fmt(totalBalanceDue)}         sub="מכוסה על ידי מתנות"                             color="amber" />
-        <KpiCard title="סה״כ מתנות צפויות"   value={fmt(totalExpectedGifts)}      sub={`${rsvpYesCount} מגיעים + ${pendingCount} ממתינים`} color="green" />
-        <KpiCard title="נקודת איזון לאורח"   value={fmt(Math.round(bepPerGuest))} sub={`מבוסס על ${safeVenueCommitment} מגיעים (× 90%)`} color="blue" />
-        <div className={`rounded-2xl border-2 p-5 ${isProfit ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/40' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/40'}`}>
-          <p className={`text-[11px] font-semibold uppercase tracking-widest opacity-60 ${isProfit ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>תחזית רווח / הפסד</p>
-          <p className={`text-2xl font-bold mt-1 ${isProfit ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{isProfit ? '+' : ''}{fmt(netProfitLoss)}</p>
-          <p className={`text-[11px] mt-1.5 leading-snug ${isProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {isProfit ? '✓ צפוי שתכסו את כל העלויות!' : `⚠️ צפוי מחסור של ${fmt(Math.abs(netProfitLoss))}.`}
+        {/* Expenses Summary */}
+        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 text-xl shadow-inner">💸</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ הוצאות</p>
+          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpensesWithBuffer)}</h3>
+          <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-orange-400"></span> 
+            {fmt(contingencyBuffer)} כרית ביטחון (10%)
           </p>
         </div>
+
+        {/* Gifts Summary */}
+        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-4 text-emerald-600 text-xl shadow-inner">🎁</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">מתנות צפויות</p>
+          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpectedGifts)}</h3>
+          <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span> 
+            מבוסס על {rsvpYesCount + pendingCount} אורחים פוטנציאליים
+          </p>
+        </div>
+
+        {/* Guest Overview - Spans 2 cols on Desktop/Tablet */}
+        <div className="col-span-1 md:col-span-2 xl:col-span-2 rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 text-xl shadow-inner">👥</div>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100">סטטוס מוזמנים</h3>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{totalInvited}</p>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">סה״כ מוזמנים</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div>
+              <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
+              <p className="text-[10px] text-slate-500 font-medium">אישרו</p>
+            </div>
+            <div className="border-x border-slate-200 dark:border-slate-700">
+              <p className="text-2xl font-bold text-amber-500">{pendingCount}</p>
+              <p className="text-[10px] text-slate-500 font-medium">ממתינים</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-indigo-600">{safeVenueCommitment}</p>
+              <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">התחייבות (90%)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Break Even Point */}
+        <div className="rounded-3xl p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-sm border border-blue-100 dark:border-blue-800/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          <div className="w-10 h-10 rounded-xl bg-white/60 dark:bg-black/20 flex items-center justify-center mb-4 text-blue-600 text-xl shadow-sm backdrop-blur-sm">⚖️</div>
+          <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold mb-1">נקודת איזון לאורח</p>
+          <h3 className="text-3xl font-bold text-blue-800 dark:text-blue-200">{fmt(Math.round(bepPerGuest))}</h3>
+          <p className="text-[10px] text-blue-600/70 dark:text-blue-300/70 mt-2 font-medium">עלות המנה הנדרשת לכיסוי</p>
+        </div>
+
+        {/* Payment Flow (Out of pocket & Balance) */}
+        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col justify-center">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-700">
+              <div>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase">שולם מראש</p>
+                <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{fmt(totalOutOfPocket)}</p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 text-xs">💳</div>
+            </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-[10px] text-amber-500 font-semibold uppercase">יתרה לתשלום</p>
+                <p className="text-lg font-bold text-amber-600">{fmt(totalBalanceDue)}</p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 text-xs">⏳</div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <Card className="p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-4">סקירת אורחים</p>
-        <div className="flex flex-wrap gap-8">
-          {[
-            { label: 'סה״כ מוזמנים',         val: totalInvited,         cls: 'text-gray-800 dark:text-gray-100' },
-            { label: 'אישרו הגעה',            val: rsvpYesCount,         cls: 'text-green-600' },
-            { label: 'ממתינים',               val: pendingCount,         cls: 'text-amber-600' },
-            { label: 'התחייבות בטוחה לאולם', val: safeVenueCommitment,  cls: 'text-indigo-700 dark:text-indigo-400' },
-          ].map(({ label, val, cls }) => (
-            <div key={label} className="text-center min-w-[64px]">
-              <div className={`text-3xl font-bold ${cls}`}>{val}</div>
-              <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 max-w-[96px]">{label}</div>
+      {tasksTotal > 0 && (
+        <div className="rounded-3xl p-5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✅</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">התקדמות מטלות</span>
             </div>
-          ))}
+            <span className="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full">{tasksDone}/{tasksTotal} מוכנים</span>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 shadow-inner overflow-hidden relative">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${tasksTotal ? tasksDone/tasksTotal*100 : 0}%` }}></div>
+            <div className="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[slide_1s_linear_infinite]" style={{ backgroundSize: '1rem 1rem' }}></div>
+          </div>
         </div>
-        <p className="text-[11px] text-gray-400 mt-4 border-t border-dashed border-gray-200 dark:border-gray-600 pt-3">
-          💡 התחייבות בטוחה = אישרו × 90% — מניח 10% אי-הגעה
-        </p>
-      </Card>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-4">פירוט הוצאות לפי קטגוריה</p>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="text-xl">📊</span>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">פירוט הוצאות</h3>
+          </div>
           <DonutChart data={expensesByCategory} />
-        </Card>
-        <Card className="p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-4">הוצאות מול מתנות צפויות</p>
+        </div>
+        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="text-xl">📈</span>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">מאזן הוצאות מול מתנות</h3>
+          </div>
           <BarChart items={barItems} />
-        </Card>
+        </div>
       </div>
     </div>
   );
@@ -1258,10 +1376,10 @@ function HeaderButtons() {
     ? { text: 'שומר…', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }
     : saveStatus === 'error'
     ? { text: 'שמירה נכשלה', cls: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300' }
-    : { text: 'נשמר אוטומטית', cls: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' };
+    : null;
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
-      <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full ${pill.cls}`}>{pill.text}</span>
+      {pill && <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full ${pill.cls}`}>{pill.text}</span>}
       <button onClick={toggle} title={dark ? 'מצב בהיר' : 'מצב כהה'}
         className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-base leading-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
         {dark ? '☀️' : '🌙'}
@@ -1280,7 +1398,7 @@ function App() {
             <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent">💍 Wedding Planner</h1>
-                <p className="text-xs text-slate-400 mt-0.5">מנהל כספים ואורחים · שומר אוטומטית</p>
+                <p className="text-xs text-slate-400 mt-0.5">תכנון החתונה של דניאל ותמר האהובים</p>
               </div>
               <HeaderButtons />
             </div>

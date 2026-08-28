@@ -1,0 +1,933 @@
+{
+  "expenses": [
+    {
+      "name": "טבעות נישואין",
+      "category": "טבעות ותוספות",
+      "total_cost": 2000,
+      "deposit_paid": 0,
+      "id": "g9xgejsb"
+    }
+  ],
+  "guests": [
+    {
+      "id": "xaji0y6d",
+      "name": "גיל דרור",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pbhsahxt",
+      "name": "נטלי סטרז׳בסקי",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "hv3a3zmf",
+      "name": "טל רייסר",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "8mdd4v30",
+      "name": "אזה רחמן",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "t9nt3w5u",
+      "name": "אינה מלכה",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "zbikcidk",
+      "name": "עדן ליטמן",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "wnnhj7xv",
+      "name": "אורן גבע",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "g0fn9xuy",
+      "name": "נועה אליאב",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "41ibljh7",
+      "name": "אולגה קוזמקו",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "5lxo6qji",
+      "name": "מיכל בניקוב",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ujv6oh9s",
+      "name": "ירדן שמואלי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "dbdw2pcn",
+      "name": "יריב פרוינד",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "9t84azyt",
+      "name": "נעמי לוי",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "jxepq85j",
+      "name": "מתן חזן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "sg65kxvf",
+      "name": "עוז הדר",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "1t2tala7",
+      "name": "לירון לוי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "53lc58dr",
+      "name": "משפחת פרייס",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 3
+    },
+    {
+      "id": "c11ertj5",
+      "name": "בטינה",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pht0hl9x",
+      "name": "אופיר ארנון",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pseimvih",
+      "name": "מרצ ודודי זרקה",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "cwi64ciy",
+      "name": "חגי שליט",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "he7ur23g",
+      "name": "אורי זומר",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "dppq0y9d",
+      "name": "יובל גושן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "om5igqpk",
+      "name": "טליה רוזנטל",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "i7p5tb94",
+      "name": "רחלי עמיחי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "874frhoc",
+      "name": "קרני פרץ",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "n9j2qp89",
+      "name": "אלינה חבד",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "uzfk8ut0",
+      "name": "טליה דר",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "cvs4f8cg",
+      "name": "שירי יפה",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "vyie6ivw",
+      "name": "אורלי כרמל",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pvs7hzio",
+      "name": "סבינה וולבובסקי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ykl1cq99",
+      "name": "ספיר סימון",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "chj755nf",
+      "name": "נועה טמים",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "4zw9xa3k",
+      "name": "עינב בן דב",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "x7eedtjv",
+      "name": "עמית אורה",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "zhwjr64d",
+      "name": "סוזנה פידלמן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pja1wj0t",
+      "name": "ינה פידלמן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pac56t4u",
+      "name": "דנה פידלמן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "fel6246h",
+      "name": "טל ברוך",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "id25owf7",
+      "name": "יסכה ברנשטיין",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "5935a0l7",
+      "name": "דנה חדש",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "253j2d54",
+      "name": "עדי לוי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "i3qk2iag",
+      "name": "לירז מן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "l58kxo9t",
+      "name": "גוני בן משה",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "7e8g8jdp",
+      "name": "פרי כהן",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "0lvsnujz",
+      "name": "ויאולטה פרוקורוב",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "a7tz0ync",
+      "name": "קטיה מוסקובויץ",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "xll4zklo",
+      "name": "תמנע נובוסלסקי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "okep7y6w",
+      "name": "שירן קוסקס",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ktakpuxq",
+      "name": "איילה לוי",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "phr62gds",
+      "name": "יעל פרוביזור",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "wm31yiha",
+      "name": "בר פרץ",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ir4cowgz",
+      "name": "מטי ועפרה פרץ",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "rixa11dp",
+      "name": "יאיר זך",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "g8sbi4q2",
+      "name": "אורטל זך",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "y9v86wzs",
+      "name": "זוהר זך",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "3t60rjiw",
+      "name": "לירן זך",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "1swjckjl",
+      "name": "עמיר ויהודית זך",
+      "group": "חוג רגיל",
+      "side": "הורים",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "teiyzcot",
+      "name": "ערן של אבא",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ohp6vz41",
+      "name": "נועה  סבג",
+      "group": "חברים קרובים",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "nam148p0",
+      "name": "ראובן סבג",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "tvhhpbmy",
+      "name": "מארק",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ofqewaou",
+      "name": "שלי סבג",
+      "group": "חוג רגיל",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 350,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "axeqbnhl",
+      "name": "איציק פורשלגר",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "1n13jcat",
+      "name": "דויד פורשלגר",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "9mx2x18h",
+      "name": "עמרי פורשלגר",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "afeyuhz1",
+      "name": "שלמה אבא של אדוה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "ממתין",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "gv0e38da",
+      "name": "מעיין גילת",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "ly8ozcyw",
+      "name": "גיא ראובני",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "d14ve92m",
+      "name": "אייל ראובני",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "pnsm43d8",
+      "name": "מיטל ראובני",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "w3zp08j3",
+      "name": "איתן וליז ראובני",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "trp0j43d",
+      "name": "אתי ואבישי תנעמי",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "5iqvnb4g",
+      "name": "נח סלוניקיו",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 2
+    },
+    {
+      "id": "h2m5zja8",
+      "name": "רותם זרקה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "dzr1yxr2",
+      "name": "דן סלוניקיו",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "dhylurtp",
+      "name": "יובל שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "0lzjjege",
+      "name": "שחר שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "t1ghr09s",
+      "name": "אביש שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "kdgigatj",
+      "name": "חני שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "9tze5r5u",
+      "name": "עמרי שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "qpgb7r3o",
+      "name": "אושר שלמה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 4
+    },
+    {
+      "id": "cwbfuk9e",
+      "name": "אדוה",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "1v2isqp4",
+      "name": "בן סלוניקיו",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 4
+    },
+    {
+      "id": "9kwv08hh",
+      "name": "קרול סלוניקיו",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    },
+    {
+      "id": "xfgcaqvk",
+      "name": "אברהם סלוניקיו",
+      "group": "משפחה גרעינית",
+      "side": "כלה",
+      "rsvp_status": "מגיע",
+      "estimated_gift": 500,
+      "actual_gift": 0,
+      "party_size": 1
+    }
+  ],
+  "tasks": [
+    {
+      "id": "e209t9sr",
+      "text": "לשלוח הזמנות",
+      "category": "הזמנות",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "qq610aco",
+      "text": "לאשר תפריט קייטרינג",
+      "category": "ספקים",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "02fj2fcy",
+      "text": "ניסיון שיער ואיפור",
+      "category": "לבוש",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "cujgs3yh",
+      "text": "לקנות טבעות",
+      "category": "חגיגה",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "tdvmjb2r",
+      "text": "להזמין מסדר טקסים",
+      "category": "ספקים",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "ulw8dlb0",
+      "text": "להכין רשימת שירים",
+      "category": "חגיגה",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "l5khu8lv",
+      "text": "לאשר פרחים ועיצוב",
+      "category": "ספקים",
+      "done": false,
+      "due_date": ""
+    },
+    {
+      "id": "bu96kqc4",
+      "text": "לסדר לינה לאורחים מרוחקים",
+      "category": "הכנות",
+      "done": false,
+      "due_date": ""
+    }
+  ],
+  "vendors": [],
+  "tables": []
+}
