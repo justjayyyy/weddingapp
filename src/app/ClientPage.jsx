@@ -249,8 +249,15 @@ function AppProvider({ children }) {
     const pending   = guests.filter(g => g.rsvp_status === 'ממתין');
     const rsvpYesCount        = attending.length;
     const pendingCount        = pending.length;
-    const safeVenueCommitment = Math.floor(rsvpYesCount * 0.9);
-    const totalExpectedGifts  = [...attending, ...pending].reduce((s, g) => s + num(g.estimated_gift), 0);
+    const expectedAttendees = guests.reduce((sum, g) => {
+      if (g.rsvp_status === 'לא מגיע') return sum;
+      return sum + ((g.arrival_probability ?? 100) / 100);
+    }, 0);
+    const safeVenueCommitment = Math.floor(expectedAttendees * 0.9);
+    const totalExpectedGifts  = guests.reduce((sum, g) => {
+      if (g.rsvp_status === 'לא מגיע') return sum;
+      return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
+    }, 0);
     const totalActualGifts    = guests.reduce((s, g) => s + num(g.actual_gift), 0);
 
     const bepPerGuest   = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
@@ -267,7 +274,7 @@ function AppProvider({ children }) {
       totalExpenses, totalOutOfPocket, totalBalanceDue,
       contingencyBuffer, totalExpensesWithBuffer,
       rsvpYesCount, pendingCount, totalInvited: guests.length,
-      safeVenueCommitment, totalExpectedGifts, totalActualGifts,
+      expectedAttendees, safeVenueCommitment, totalExpectedGifts, totalActualGifts,
       bepPerGuest, netProfitLoss, expensesByCategory,
       tasksDone, tasksTotal,
     };
@@ -575,7 +582,7 @@ function HeroSection() {
 function Dashboard() {
   const { metrics } = useApp();
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
-    totalExpectedGifts, rsvpYesCount, pendingCount, safeVenueCommitment,
+    totalExpectedGifts, rsvpYesCount, pendingCount, safeVenueCommitment, expectedAttendees,
     totalInvited, bepPerGuest, netProfitLoss, expensesByCategory, tasksDone, tasksTotal } = metrics;
 
   const barItems = [
@@ -649,14 +656,18 @@ function Dashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+          <div className="grid grid-cols-4 gap-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-700">
             <div>
               <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
               <p className="text-[10px] text-slate-500 font-medium">אישרו</p>
             </div>
-            <div className="border-x border-slate-200 dark:border-slate-700">
+            <div>
               <p className="text-2xl font-bold text-amber-500">{pendingCount}</p>
               <p className="text-[10px] text-slate-500 font-medium">ממתינים</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-600">{Math.round(expectedAttendees)}</p>
+              <p className="text-[10px] text-slate-500 font-medium">צפי הגעה</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-indigo-600">{safeVenueCommitment}</p>
@@ -963,11 +974,12 @@ function Guests() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label:'סה״כ מוזמנים',       val:metrics.totalInvited,        cls:'text-slate-800 dark:text-slate-100' },
           { label:'אישרו הגעה',          val:metrics.rsvpYesCount,        cls:'text-emerald-600' },
           { label:'ממתינים',             val:metrics.pendingCount,        cls:'text-amber-600' },
+          { label:'צפי הגעה משוקלל',      val:Math.round(metrics.expectedAttendees), cls:'text-blue-600 dark:text-blue-400' },
           { label:'התחייבות ×0.9',       val:metrics.safeVenueCommitment, cls:'text-indigo-600 dark:text-indigo-400' },
         ].map(({ label, val, cls }) => (
           <Card key={label} className="p-4 text-center shadow-sm">
