@@ -875,7 +875,7 @@ function Expenses() {
 
 // ── Guests ─────────────────────────────────────────────────────────────────
 function GuestModal({ guest, onSave, onClose }) {
-  const blank = { name: '', group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0 };
+  const blank = { name: '', group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100 };
   const [form, setForm] = useState(guest ? { ...guest } : blank);
   const set = e => {
     const { name, value } = e.target;
@@ -889,9 +889,14 @@ function GuestModal({ guest, onSave, onClose }) {
           <div className="col-span-2"><Field label="שם האורח"><TextInput name="name" value={form.name} onChange={set} required placeholder="שם מלא או זוג" /></Field></div>
           <Field label="קבוצה"><SelectInput name="group" value={form.group} onChange={set} options={GUEST_GROUPS.includes(form.group) ? GUEST_GROUPS : [form.group, ...GUEST_GROUPS]} /></Field>
           <Field label="צד"><SelectInput name="side" value={form.side} onChange={set} options={GUEST_SIDES} /></Field>
-          <Field label="סטטוס RSVP"><SelectInput name="rsvp_status" value={form.rsvp_status} onChange={set} options={RSVP_STATUSES} /></Field>
+          <Field label="סטטוס"><SelectInput name="rsvp_status" value={form.rsvp_status} onChange={set} options={RSVP_STATUSES} /></Field>
           <Field label="מתנה מוערכת (₪)" hint="— אוטומטי לפי קבוצה"><TextInput name="estimated_gift" value={form.estimated_gift} onChange={set} type="number" min="0" /></Field>
           <div className="col-span-2"><Field label="מתנה שהתקבלה בפועל (₪)"><TextInput name="actual_gift" value={form.actual_gift} onChange={set} type="number" min="0" placeholder="0" /></Field></div>
+          <div className="col-span-2">
+            <Field label={`סבירות הגעה: ${form.arrival_probability ?? 100}%`}>
+              <input type="range" name="arrival_probability" min="0" max="100" step="10" value={form.arrival_probability ?? 100} onChange={set} className="w-full accent-indigo-600 cursor-pointer" />
+            </Field>
+          </div>
         </div>
         <div className="flex gap-2 justify-end pt-1">
           <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
@@ -928,7 +933,8 @@ function Guests() {
         'צד': g.side,
         'קבוצה': g.group,
         'כמות אורחים': g.party_size,
-        'סטטוס הגעה': g.rsvp_status,
+        'סטטוס': g.rsvp_status,
+        'סבירות הגעה (%)': g.arrival_probability ?? 100,
         'מתנה משוערת': g.estimated_gift,
         'מתנה בפועל': g.actual_gift,
         'הגבלות תזונה / הערות': g.dietary || ''
@@ -1010,7 +1016,10 @@ function Guests() {
                     <span className="text-xs text-slate-500">{g.group} • {g.side}</span>
                   </div>
                 </div>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
+                <div className="flex gap-1 items-center">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{g.arrival_probability ?? 100}%</span>
+                </div>
               </div>
               <div className="flex justify-between items-center mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
                 <div className="flex flex-col"><span className="text-[10px] text-slate-500">מוערכת</span><span className="font-semibold text-indigo-600 dark:text-indigo-400 text-sm">{fmt(g.estimated_gift)}</span></div>
@@ -1035,7 +1044,8 @@ function Guests() {
                 <th className="text-right px-4 py-3 font-semibold">שם</th>
                 <th className="text-right px-4 py-3 font-semibold">קבוצה</th>
                 <th className="text-right px-4 py-3 font-semibold">צד</th>
-                <th className="text-center px-4 py-3 font-semibold">RSVP</th>
+                <th className="text-center px-4 py-3 font-semibold">סטטוס</th>
+                <th className="text-center px-4 py-3 font-semibold">הגעה</th>
                 <th className="text-right px-4 py-3 font-semibold">מתנה מוערכת</th>
                 <th className="text-right px-4 py-3 font-semibold">מתנה בפועל</th>
                 <th className="text-center px-4 py-3 font-semibold w-28">פעולות</th>
@@ -1050,6 +1060,9 @@ function Guests() {
                   <td className="px-4 py-3 text-center">
                     <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
                   </td>
+                  <td className="px-4 py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    {g.arrival_probability ?? 100}%
+                  </td>
                   <td className="px-4 py-3 text-right font-semibold text-indigo-600 dark:text-indigo-400">{fmt(g.estimated_gift)}</td>
                   <td className="px-4 py-3 text-right font-semibold text-emerald-600">
                     {num(g.actual_gift) > 0 ? fmt(g.actual_gift) : <span className="text-slate-300 font-normal">—</span>}
@@ -1063,7 +1076,7 @@ function Guests() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 text-sm border-dashed border-2 m-4 bg-transparent">לא נמצאו אורחים מתאימים</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-slate-400 text-sm border-dashed border-2 m-4 bg-transparent">לא נמצאו אורחים מתאימים</td></tr>
               )}
             </tbody>
           </table>
@@ -1492,7 +1505,7 @@ function App() {
             </div>
           </header>
 
-          <main className="max-w-6xl mx-auto px-4 py-8 animate-fade-in-up">
+          <main className="max-w-6xl mx-auto px-4 py-8">
             {tab === 'dashboard' && <Dashboard />}
             {tab === 'expenses'  && <Expenses />}
             {tab === 'guests'    && <Guests />}
