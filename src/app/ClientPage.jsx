@@ -1,111 +1,111 @@
 "use client";
-import { createContext, useContext, useState, useEffect, useMemo, useRef  } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const GROUP_GIFT_DEFAULTS = {
-  'כללי':            350,
-  'משפחה':           500,
-  'משפחה גרעינית':   500,
-  'חברים':           350,
-  'חברים קרובים':    500,
-  'עבודה':           350,
+  'כללי': 350,
+  'משפחה': 500,
+  'משפחה גרעינית': 500,
+  'חברים': 350,
+  'חברים קרובים': 500,
+  'עבודה': 350,
   'חברים של ההורים': 350,
 };
-const EXPENSE_CATEGORIES = ['אולם וקייטרינג','ספקים מרכזיים','לבוש ויופי','טבעות ותוספות'];
-const GUEST_GROUPS       = Object.keys(GROUP_GIFT_DEFAULTS);
-const GUEST_SIDES        = ['כלה','חתן','הורים'];
-const RSVP_STATUSES      = ['ממתין','מגיע','לא מגיע'];
-const VENDOR_STATUSES    = ['ליצור קשר','בתהליך','חתום','שולם במלואו'];
-const VENDOR_CATEGORIES  = [...EXPENSE_CATEGORIES,'אחר'];
-const CHECKLIST_CATS     = ['הכנות','ספקים','לבוש','חגיגה','הזמנות','אחר'];
+const EXPENSE_CATEGORIES = ['אולם וקייטרינג', 'ספקים מרכזיים', 'לבוש ויופי', 'טבעות ותוספות'];
+const GUEST_GROUPS = Object.keys(GROUP_GIFT_DEFAULTS);
+const GUEST_SIDES = ['כלה', 'חתן', 'הורים'];
+const RSVP_STATUSES = ['ממתין', 'מגיע', 'לא מגיע'];
+const VENDOR_STATUSES = ['ליצור קשר', 'בתהליך', 'חתום', 'שולם במלואו'];
+const VENDOR_CATEGORIES = [...EXPENSE_CATEGORIES, 'אחר'];
+const CHECKLIST_CATS = ['הכנות', 'ספקים', 'לבוש', 'חגיגה', 'הזמנות', 'אחר'];
 
 const CAT_COLORS = {
-  'אולם וקייטרינג':'#6366f1','ספקים מרכזיים':'#8b5cf6','לבוש ויופי':'#ec4899','טבעות ותוספות':'#f59e0b',
+  'אולם וקייטרינג': '#6366f1', 'ספקים מרכזיים': '#8b5cf6', 'לבוש ויופי': '#ec4899', 'טבעות ותוספות': '#f59e0b',
 };
 const RSVP_BADGE = {
-  'מגיע':'bg-green-100 text-green-700','לא מגיע':'bg-red-100 text-red-700','ממתין':'bg-amber-100 text-amber-700',
+  'מגיע': 'bg-green-100 text-green-700', 'לא מגיע': 'bg-red-100 text-red-700', 'ממתין': 'bg-amber-100 text-amber-700',
 };
 const VENDOR_BADGE = {
-  'ליצור קשר':'bg-gray-100 text-gray-600','בתהליך':'bg-blue-100 text-blue-700',
-  'חתום':'bg-indigo-100 text-indigo-700','שולם במלואו':'bg-green-100 text-green-700',
+  'ליצור קשר': 'bg-gray-100 text-gray-600', 'בתהליך': 'bg-blue-100 text-blue-700',
+  'חתום': 'bg-indigo-100 text-indigo-700', 'שולם במלואו': 'bg-green-100 text-green-700',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const uid  = () => Math.random().toString(36).slice(2, 10);
-const num  = (v) => Number(v) || 0;
-const fmt  = (n) => '₪' + num(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const uid = () => Math.random().toString(36).slice(2, 10);
+const num = (v) => Number(v) || 0;
+const fmt = (n) => '₪' + num(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const load = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 
 // ── Seed data ──────────────────────────────────────────────────────────────
 const SEED_EXPENSES = [
-  { id: uid(), name: 'אולם חתונה',          category: 'אולם וקייטרינג', total_cost: 45000, deposit_paid: 10000 },
-  { id: uid(), name: 'קייטרינג',            category: 'אולם וקייטרינג', total_cost: 32000, deposit_paid:  5000 },
-  { id: uid(), name: 'עוגת חתונה',          category: 'אולם וקייטרינג', total_cost:  3500, deposit_paid:  1000 },
-  { id: uid(), name: 'DJ',                  category: 'ספקים מרכזיים',  total_cost:  8000, deposit_paid:  2000 },
-  { id: uid(), name: 'צילום ווידאו',         category: 'ספקים מרכזיים',  total_cost: 15000, deposit_paid:  5000 },
-  { id: uid(), name: 'מסדר טקסים',          category: 'ספקים מרכזיים',  total_cost:  4500, deposit_paid:  1500 },
-  { id: uid(), name: 'תאורה ואפקטים',       category: 'ספקים מרכזיים',  total_cost:  6000, deposit_paid:  2000 },
-  { id: uid(), name: 'שמלת כלה',            category: 'לבוש ויופי',     total_cost:  8000, deposit_paid:  3000 },
-  { id: uid(), name: 'חליפת חתן',           category: 'לבוש ויופי',     total_cost:  3500, deposit_paid:  1500 },
-  { id: uid(), name: 'שיער ואיפור',         category: 'לבוש ויופי',     total_cost:  2800, deposit_paid:   800 },
-  { id: uid(), name: 'פרחים ועיצוב',        category: 'טבעות ותוספות',  total_cost:  6000, deposit_paid:  2000 },
-  { id: uid(), name: 'טבעות נישואין',       category: 'טבעות ותוספות',  total_cost:  9000, deposit_paid:  9000 },
-  { id: uid(), name: 'הזמנות ומתנות לאורחים', category: 'טבעות ותוספות', total_cost: 2500, deposit_paid:  2500 },
+  { id: uid(), name: 'אולם חתונה', category: 'אולם וקייטרינג', total_cost: 45000, deposit_paid: 10000 },
+  { id: uid(), name: 'קייטרינג', category: 'אולם וקייטרינג', total_cost: 32000, deposit_paid: 5000 },
+  { id: uid(), name: 'עוגת חתונה', category: 'אולם וקייטרינג', total_cost: 3500, deposit_paid: 1000 },
+  { id: uid(), name: 'DJ', category: 'ספקים מרכזיים', total_cost: 8000, deposit_paid: 2000 },
+  { id: uid(), name: 'צילום ווידאו', category: 'ספקים מרכזיים', total_cost: 15000, deposit_paid: 5000 },
+  { id: uid(), name: 'מסדר טקסים', category: 'ספקים מרכזיים', total_cost: 4500, deposit_paid: 1500 },
+  { id: uid(), name: 'תאורה ואפקטים', category: 'ספקים מרכזיים', total_cost: 6000, deposit_paid: 2000 },
+  { id: uid(), name: 'שמלת כלה', category: 'לבוש ויופי', total_cost: 8000, deposit_paid: 3000 },
+  { id: uid(), name: 'חליפת חתן', category: 'לבוש ויופי', total_cost: 3500, deposit_paid: 1500 },
+  { id: uid(), name: 'שיער ואיפור', category: 'לבוש ויופי', total_cost: 2800, deposit_paid: 800 },
+  { id: uid(), name: 'פרחים ועיצוב', category: 'טבעות ותוספות', total_cost: 6000, deposit_paid: 2000 },
+  { id: uid(), name: 'טבעות נישואין', category: 'טבעות ותוספות', total_cost: 9000, deposit_paid: 9000 },
+  { id: uid(), name: 'הזמנות ומתנות לאורחים', category: 'טבעות ותוספות', total_cost: 2500, deposit_paid: 2500 },
 ];
 const SEED_GUESTS = [
-  { id: uid(), name: 'דוד ומרים כהן',       group: 'משפחה גרעינית', side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 500 },
-  { id: uid(), name: 'יוסף ורחל לוי',       group: 'משפחה גרעינית', side: 'חתן',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 600 },
-  { id: uid(), name: 'שמעון ולאה כהן',      group: 'משפחה גרעינית', side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 0   },
-  { id: uid(), name: 'אברהם ושרה לוי',      group: 'משפחה גרעינית', side: 'חתן',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 0   },
-  { id: uid(), name: 'נועה שפירו',          group: 'חברים קרובים',  side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 500 },
-  { id: uid(), name: 'ליאור ודנה אברהם',    group: 'חברים קרובים',  side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 0   },
-  { id: uid(), name: 'אבי כץ',              group: 'חברים קרובים',  side: 'חתן',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 0   },
-  { id: uid(), name: 'רון ויעל בן-שלום',    group: 'חברים קרובים',  side: 'חתן',   rsvp_status: 'מגיע',    estimated_gift: 500, actual_gift: 0   },
-  { id: uid(), name: 'מיה מזרחי',           group: 'כללי',          side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 350, actual_gift: 0   },
-  { id: uid(), name: 'גלי וניר סגל',        group: 'כללי',          side: 'כלה',   rsvp_status: 'מגיע',    estimated_gift: 350, actual_gift: 0   },
-  { id: uid(), name: 'טל בן-דוד',           group: 'כללי',          side: 'חתן',   rsvp_status: 'ממתין',   estimated_gift: 350, actual_gift: 0   },
-  { id: uid(), name: 'עומר ורחל פרץ',       group: 'כללי',          side: 'חתן',   rsvp_status: 'ממתין',   estimated_gift: 350, actual_gift: 0   },
-  { id: uid(), name: 'כרמית אלון',          group: 'חברים של ההורים', side: 'הורים', rsvp_status: 'ממתין', estimated_gift: 350, actual_gift: 0   },
-  { id: uid(), name: 'תמר גולדשטיין',       group: 'כללי',          side: 'הורים', rsvp_status: 'ממתין',   estimated_gift: 250, actual_gift: 0   },
-  { id: uid(), name: 'אורי פרידמן',         group: 'כללי',          side: 'כלה',   rsvp_status: 'ממתין',   estimated_gift: 250, actual_gift: 0   },
-  { id: uid(), name: 'שיר וגל נחמני',       group: 'כללי',          side: 'חתן',   rsvp_status: 'ממתין',   estimated_gift: 250, actual_gift: 0   },
-  { id: uid(), name: 'איתי רוזנברג',        group: 'כללי',          side: 'חתן',   rsvp_status: 'לא מגיע', estimated_gift: 250, actual_gift: 0   },
-  { id: uid(), name: 'מורן ביטון',          group: 'כללי',          side: 'כלה',   rsvp_status: 'לא מגיע', estimated_gift: 250, actual_gift: 0   },
+  { id: uid(), name: 'דוד ומרים כהן', group: 'משפחה גרעינית', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 500 },
+  { id: uid(), name: 'יוסף ורחל לוי', group: 'משפחה גרעינית', side: 'חתן', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 600 },
+  { id: uid(), name: 'שמעון ולאה כהן', group: 'משפחה גרעינית', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 0 },
+  { id: uid(), name: 'אברהם ושרה לוי', group: 'משפחה גרעינית', side: 'חתן', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 0 },
+  { id: uid(), name: 'נועה שפירו', group: 'חברים קרובים', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 500 },
+  { id: uid(), name: 'ליאור ודנה אברהם', group: 'חברים קרובים', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 0 },
+  { id: uid(), name: 'אבי כץ', group: 'חברים קרובים', side: 'חתן', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 0 },
+  { id: uid(), name: 'רון ויעל בן-שלום', group: 'חברים קרובים', side: 'חתן', rsvp_status: 'מגיע', estimated_gift: 500, actual_gift: 0 },
+  { id: uid(), name: 'מיה מזרחי', group: 'כללי', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 350, actual_gift: 0 },
+  { id: uid(), name: 'גלי וניר סגל', group: 'כללי', side: 'כלה', rsvp_status: 'מגיע', estimated_gift: 350, actual_gift: 0 },
+  { id: uid(), name: 'טל בן-דוד', group: 'כללי', side: 'חתן', rsvp_status: 'ממתין', estimated_gift: 350, actual_gift: 0 },
+  { id: uid(), name: 'עומר ורחל פרץ', group: 'כללי', side: 'חתן', rsvp_status: 'ממתין', estimated_gift: 350, actual_gift: 0 },
+  { id: uid(), name: 'כרמית אלון', group: 'חברים של ההורים', side: 'הורים', rsvp_status: 'ממתין', estimated_gift: 350, actual_gift: 0 },
+  { id: uid(), name: 'תמר גולדשטיין', group: 'כללי', side: 'הורים', rsvp_status: 'ממתין', estimated_gift: 250, actual_gift: 0 },
+  { id: uid(), name: 'אורי פרידמן', group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: 250, actual_gift: 0 },
+  { id: uid(), name: 'שיר וגל נחמני', group: 'כללי', side: 'חתן', rsvp_status: 'ממתין', estimated_gift: 250, actual_gift: 0 },
+  { id: uid(), name: 'איתי רוזנברג', group: 'כללי', side: 'חתן', rsvp_status: 'לא מגיע', estimated_gift: 250, actual_gift: 0 },
+  { id: uid(), name: 'מורן ביטון', group: 'כללי', side: 'כלה', rsvp_status: 'לא מגיע', estimated_gift: 250, actual_gift: 0 },
 ];
 const SEED_TASKS = [
-  { id: uid(), text: 'לקבוע תאריך ואולם',              category: 'הכנות',   done: true,  due_date: '2025-12-01' },
-  { id: uid(), text: 'לשלוח save the date',            category: 'הזמנות', done: true,  due_date: '2026-01-15' },
-  { id: uid(), text: 'לחתום על חוזה קייטרינג',         category: 'ספקים',  done: true,  due_date: '2026-02-01' },
-  { id: uid(), text: 'לשלוח הזמנות רשמיות',            category: 'הזמנות', done: false, due_date: '2026-04-01' },
-  { id: uid(), text: 'לאשר תפריט קייטרינג',            category: 'ספקים',  done: false, due_date: '2026-05-01' },
-  { id: uid(), text: 'ניסיון שיער ואיפור',              category: 'לבוש',   done: false, due_date: '2026-05-15' },
-  { id: uid(), text: 'לקנות טבעות',                    category: 'חגיגה',  done: false, due_date: '2026-06-01' },
-  { id: uid(), text: 'להכין רשימת שירים ל-DJ',          category: 'חגיגה',  done: false, due_date: '2026-06-15' },
-  { id: uid(), text: 'לאשר פרחים ועיצוב סופי',         category: 'ספקים',  done: false, due_date: '2026-06-15' },
-  { id: uid(), text: 'לסדר לינה לאורחים מרוחקים',      category: 'הכנות',  done: false, due_date: '2026-06-20' },
-  { id: uid(), text: 'להכין סידורי ישיבה',              category: 'הכנות',  done: false, due_date: '2026-07-01' },
-  { id: uid(), text: 'לאשר מספר אורחים סופי לאולם',   category: 'ספקים',  done: false, due_date: '2026-07-10' },
-  { id: uid(), text: 'להכין תמונות לשולחן ה׳בריפינג׳', category: 'חגיגה',  done: false, due_date: '2026-07-15' },
+  { id: uid(), text: 'לקבוע תאריך ואולם', category: 'הכנות', done: true, due_date: '2025-12-01' },
+  { id: uid(), text: 'לשלוח save the date', category: 'הזמנות', done: true, due_date: '2026-01-15' },
+  { id: uid(), text: 'לחתום על חוזה קייטרינג', category: 'ספקים', done: true, due_date: '2026-02-01' },
+  { id: uid(), text: 'לשלוח הזמנות רשמיות', category: 'הזמנות', done: false, due_date: '2026-04-01' },
+  { id: uid(), text: 'לאשר תפריט קייטרינג', category: 'ספקים', done: false, due_date: '2026-05-01' },
+  { id: uid(), text: 'ניסיון שיער ואיפור', category: 'לבוש', done: false, due_date: '2026-05-15' },
+  { id: uid(), text: 'לקנות טבעות', category: 'חגיגה', done: false, due_date: '2026-06-01' },
+  { id: uid(), text: 'להכין רשימת שירים ל-DJ', category: 'חגיגה', done: false, due_date: '2026-06-15' },
+  { id: uid(), text: 'לאשר פרחים ועיצוב סופי', category: 'ספקים', done: false, due_date: '2026-06-15' },
+  { id: uid(), text: 'לסדר לינה לאורחים מרוחקים', category: 'הכנות', done: false, due_date: '2026-06-20' },
+  { id: uid(), text: 'להכין סידורי ישיבה', category: 'הכנות', done: false, due_date: '2026-07-01' },
+  { id: uid(), text: 'לאשר מספר אורחים סופי לאולם', category: 'ספקים', done: false, due_date: '2026-07-10' },
+  { id: uid(), text: 'להכין תמונות לשולחן ה׳בריפינג׳', category: 'חגיגה', done: false, due_date: '2026-07-15' },
 ];
 const SEED_VENDORS = [
-  { id: uid(), name: 'גן העדן — אולם אירועים',  category: 'אולם וקייטרינג', contact_name: 'יוסי כהן',    phone: '052-1234567', contract_amount: 45000, paid_amount: 10000, status: 'חתום',         notes: 'כולל שולחנות, כיסאות ומפות' },
-  { id: uid(), name: 'קייטרינג מלכה',            category: 'אולם וקייטרינג', contact_name: 'מלכה אביב',   phone: '03-9876543',  contract_amount: 32000, paid_amount:  5000, status: 'חתום',         notes: 'תפריט מגוון, כולל אפשרות טבעונית' },
-  { id: uid(), name: 'DJ מושיקו',                category: 'ספקים מרכזיים',  contact_name: 'משה לוי',     phone: '054-7654321', contract_amount:  8000, paid_amount:  2000, status: 'חתום',         notes: 'ציוד סאונד מקצועי' },
-  { id: uid(), name: 'סטודיו שמחות',             category: 'ספקים מרכזיים',  contact_name: 'דנה מזרחי',  phone: '050-1111222', contract_amount: 15000, paid_amount:  5000, status: 'חתום',         notes: 'צילום + וידאו, אלבום דיגיטלי כלול' },
-  { id: uid(), name: 'רב מאיר כהן',              category: 'ספקים מרכזיים',  contact_name: 'הרב מאיר',    phone: '052-3331111', contract_amount:  4500, paid_amount:  1500, status: 'חתום',         notes: 'כולל הכנת כתובה' },
-  { id: uid(), name: 'תאורה פנטסטיק',            category: 'ספקים מרכזיים',  contact_name: 'אלון גרין',   phone: '054-2224444', contract_amount:  6000, paid_amount:  2000, status: 'בתהליך',       notes: '' },
-  { id: uid(), name: 'בוטיק כלה "נסיכה"',        category: 'לבוש ויופי',     contact_name: 'רונית שרון',  phone: '03-5556789',  contract_amount:  8000, paid_amount:  3000, status: 'בתהליך',       notes: 'ניסיון שני בתאריך 15/05' },
-  { id: uid(), name: 'שיער ואיפור — נטלי',        category: 'לבוש ויופי',     contact_name: 'נטלי בר',     phone: '050-9998877', contract_amount:  2800, paid_amount:   800, status: 'חתום',         notes: 'כולל ניסיון + יום החתונה' },
-  { id: uid(), name: 'פרחי אביב',                category: 'טבעות ותוספות',  contact_name: 'אביב פרחים',  phone: '09-1234321',  contract_amount:  6000, paid_amount:  2000, status: 'בתהליך',       notes: 'סגנון בוהו-שיק' },
-  { id: uid(), name: 'תכשיטי זהב — ירושלמי',    category: 'טבעות ותוספות',  contact_name: 'שלמה ירושלמי', phone: '02-6667777', contract_amount:  9000, paid_amount:  9000, status: 'שולם במלואו',  notes: 'טבעות מוכנות, לאסוף שבוע לפני' },
+  { id: uid(), name: 'גן העדן — אולם אירועים', category: 'אולם וקייטרינג', contact_name: 'יוסי כהן', phone: '052-1234567', contract_amount: 45000, paid_amount: 10000, status: 'חתום', notes: 'כולל שולחנות, כיסאות ומפות' },
+  { id: uid(), name: 'קייטרינג מלכה', category: 'אולם וקייטרינג', contact_name: 'מלכה אביב', phone: '03-9876543', contract_amount: 32000, paid_amount: 5000, status: 'חתום', notes: 'תפריט מגוון, כולל אפשרות טבעונית' },
+  { id: uid(), name: 'DJ מושיקו', category: 'ספקים מרכזיים', contact_name: 'משה לוי', phone: '054-7654321', contract_amount: 8000, paid_amount: 2000, status: 'חתום', notes: 'ציוד סאונד מקצועי' },
+  { id: uid(), name: 'סטודיו שמחות', category: 'ספקים מרכזיים', contact_name: 'דנה מזרחי', phone: '050-1111222', contract_amount: 15000, paid_amount: 5000, status: 'חתום', notes: 'צילום + וידאו, אלבום דיגיטלי כלול' },
+  { id: uid(), name: 'רב מאיר כהן', category: 'ספקים מרכזיים', contact_name: 'הרב מאיר', phone: '052-3331111', contract_amount: 4500, paid_amount: 1500, status: 'חתום', notes: 'כולל הכנת כתובה' },
+  { id: uid(), name: 'תאורה פנטסטיק', category: 'ספקים מרכזיים', contact_name: 'אלון גרין', phone: '054-2224444', contract_amount: 6000, paid_amount: 2000, status: 'בתהליך', notes: '' },
+  { id: uid(), name: 'בוטיק כלה "נסיכה"', category: 'לבוש ויופי', contact_name: 'רונית שרון', phone: '03-5556789', contract_amount: 8000, paid_amount: 3000, status: 'בתהליך', notes: 'ניסיון שני בתאריך 15/05' },
+  { id: uid(), name: 'שיער ואיפור — נטלי', category: 'לבוש ויופי', contact_name: 'נטלי בר', phone: '050-9998877', contract_amount: 2800, paid_amount: 800, status: 'חתום', notes: 'כולל ניסיון + יום החתונה' },
+  { id: uid(), name: 'פרחי אביב', category: 'טבעות ותוספות', contact_name: 'אביב פרחים', phone: '09-1234321', contract_amount: 6000, paid_amount: 2000, status: 'בתהליך', notes: 'סגנון בוהו-שיק' },
+  { id: uid(), name: 'תכשיטי זהב — ירושלמי', category: 'טבעות ותוספות', contact_name: 'שלמה ירושלמי', phone: '02-6667777', contract_amount: 9000, paid_amount: 9000, status: 'שולם במלואו', notes: 'טבעות מוכנות, לאסוף שבוע לפני' },
 ];
 const SEED_TABLES = [
-  { id: uid(), name: 'שולחן 1 — משפחה כלה',   capacity: 10, guest_ids: [] },
-  { id: uid(), name: 'שולחן 2 — משפחה חתן',   capacity: 10, guest_ids: [] },
-  { id: uid(), name: 'שולחן 3 — חברים כלה',   capacity:  8, guest_ids: [] },
-  { id: uid(), name: 'שולחן 4 — חברים חתן',   capacity:  8, guest_ids: [] },
-  { id: uid(), name: 'שולחן 5 — עמיתים',       capacity:  8, guest_ids: [] },
-  { id: uid(), name: 'שולחן 6 — שכנים',        capacity:  6, guest_ids: [] },
+  { id: uid(), name: 'שולחן 1 — משפחה כלה', capacity: 10, guest_ids: [] },
+  { id: uid(), name: 'שולחן 2 — משפחה חתן', capacity: 10, guest_ids: [] },
+  { id: uid(), name: 'שולחן 3 — חברים כלה', capacity: 8, guest_ids: [] },
+  { id: uid(), name: 'שולחן 4 — חברים חתן', capacity: 8, guest_ids: [] },
+  { id: uid(), name: 'שולחן 5 — עמיתים', capacity: 8, guest_ids: [] },
+  { id: uid(), name: 'שולחן 6 — שכנים', capacity: 6, guest_ids: [] },
 ];
 
 // ── JSON persistence (wedding-data.json via local server) ───────────────────
@@ -143,21 +143,21 @@ const useDark = () => useContext(DarkCtx);
 const AppCtx = createContext(null);
 
 function AppProvider({ children }) {
-  const [ready, setReady]         = useState(false);
+  const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [saveStatus, setSaveStatus] = useState('idle');
-  const [expenses, setExpenses]   = useState([]);
-  const [guests,   setGuests]     = useState([]);
-  const [tasks,    setTasks]      = useState([]);
-  const [vendors,  setVendors]    = useState([]);
-  const [tables,   setTables]     = useState([]);
-  const [toasts,   setToasts]     = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [guests, setGuests] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [tables, setTables] = useState([]);
+  const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
-  
+
   const confirmDialog = (msg) => new Promise(resolve => setConfirmState({ msg, resolve }));
   const handleConfirm = (res) => { if (confirmState) { confirmState.resolve(res); setConfirmState(null); } };
   const hydrated = useRef(false);
-  const saveGen  = useRef(0);
+  const saveGen = useRef(0);
 
   const addToast = (msg, type = 'success') => {
     const id = uid();
@@ -175,10 +175,10 @@ function AppProvider({ children }) {
         const p = await fetchWeddingData();
         if (cancelled) return;
         if (p.expenses) setExpenses(p.expenses);
-        if (p.guests)   setGuests(p.guests);
-        if (p.tasks)    setTasks(p.tasks);
-        if (p.vendors)  setVendors(p.vendors);
-        if (p.tables)   setTables(p.tables);
+        if (p.guests) setGuests(p.guests);
+        if (p.tasks) setTasks(p.tasks);
+        if (p.vendors) setVendors(p.vendors);
+        if (p.tables) setTables(p.tables);
         setLoadError(false);
       } catch {
         if (!cancelled) setLoadError(true);
@@ -211,27 +211,27 @@ function AppProvider({ children }) {
     return () => clearTimeout(t);
   }, [expenses, guests, tasks, vendors, tables, ready, loadError]);
 
-  const addExpense    = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
+  const addExpense = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
   const updateExpense = (id, d) => { setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e)); addToast('הוצאה עודכנה'); };
   const deleteExpense = (id) => { setExpenses(p => p.filter(e => e.id !== id)); addToast('הוצאה נמחקה'); };
 
-  const addGuest    = (d) => { setGuests(p => [...p, { ...d, id: uid(), estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) }]); addToast('אורח נוסף בהצלחה'); };
+  const addGuest = (d) => { setGuests(p => [...p, { ...d, id: uid(), estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) }]); addToast('אורח נוסף בהצלחה'); };
   const updateGuest = (id, d) => { setGuests(p => p.map(g => g.id === id ? { ...g, ...d, estimated_gift: num(d.estimated_gift), actual_gift: num(d.actual_gift) } : g)); addToast('פרטי אורח עודכנו'); };
   const deleteGuest = (id) => { setGuests(p => p.filter(g => g.id !== id)); addToast('אורח נמחק'); };
 
-  const addTask    = (d) => { setTasks(p => [...p, { ...d, id: uid(), done: false }]); addToast('מטלה נוספה'); };
+  const addTask = (d) => { setTasks(p => [...p, { ...d, id: uid(), done: false }]); addToast('מטלה נוספה'); };
   const toggleTask = (id) => setTasks(p => p.map(t => t.id === id ? { ...t, done: !t.done } : t));
   const updateTask = (id, d) => setTasks(p => p.map(t => t.id === id ? { ...t, ...d } : t));
   const deleteTask = (id) => { setTasks(p => p.filter(t => t.id !== id)); addToast('מטלה נמחקה'); };
 
-  const addVendor    = (d) => { setVendors(p => [...p, { ...d, id: uid(), contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) }]); addToast('ספק נוסף בהצלחה'); };
+  const addVendor = (d) => { setVendors(p => [...p, { ...d, id: uid(), contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) }]); addToast('ספק נוסף בהצלחה'); };
   const updateVendor = (id, d) => { setVendors(p => p.map(v => v.id === id ? { ...v, ...d, contract_amount: num(d.contract_amount), paid_amount: num(d.paid_amount) } : v)); addToast('ספק עודכן'); };
   const deleteVendor = (id) => { setVendors(p => p.filter(v => v.id !== id)); addToast('ספק נמחק'); };
 
-  const addTable      = (d) => { setTables(p => [...p, { ...d, id: uid(), capacity: num(d.capacity), guest_ids: [] }]); addToast('שולחן חדש נוסף'); };
-  const updateTable   = (id, d) => setTables(p => p.map(t => t.id === id ? { ...t, ...d, capacity: num(d.capacity) } : t));
-  const deleteTable   = (id) => { setTables(p => p.filter(t => t.id !== id)); addToast('שולחן נמחק'); };
-  const assignGuest   = (guestId, tableId) => setTables(p => p.map(t => ({
+  const addTable = (d) => { setTables(p => [...p, { ...d, id: uid(), capacity: num(d.capacity), guest_ids: [] }]); addToast('שולחן חדש נוסף'); };
+  const updateTable = (id, d) => setTables(p => p.map(t => t.id === id ? { ...t, ...d, capacity: num(d.capacity) } : t));
+  const deleteTable = (id) => { setTables(p => p.filter(t => t.id !== id)); addToast('שולחן נמחק'); };
+  const assignGuest = (guestId, tableId) => setTables(p => p.map(t => ({
     ...t, guest_ids: t.id === tableId
       ? (t.guest_ids.includes(guestId) ? t.guest_ids : [...t.guest_ids, guestId])
       : t.guest_ids.filter(id => id !== guestId),
@@ -239,35 +239,35 @@ function AppProvider({ children }) {
   const unassignGuest = (guestId) => setTables(p => p.map(t => ({ ...t, guest_ids: t.guest_ids.filter(id => id !== guestId) })));
 
   const metrics = useMemo(() => {
-    const totalExpenses           = expenses.reduce((s, e) => s + num(e.total_cost), 0);
-    const totalOutOfPocket        = expenses.reduce((s, e) => s + num(e.deposit_paid), 0);
-    const totalBalanceDue         = totalExpenses - totalOutOfPocket;
-    const contingencyBuffer       = totalExpenses * 0.1;
+    const totalExpenses = expenses.reduce((s, e) => s + num(e.total_cost), 0);
+    const totalOutOfPocket = expenses.reduce((s, e) => s + num(e.deposit_paid), 0);
+    const totalBalanceDue = totalExpenses - totalOutOfPocket;
+    const contingencyBuffer = totalExpenses * 0.1;
     const totalExpensesWithBuffer = totalExpenses + contingencyBuffer;
 
     const attending = guests.filter(g => g.rsvp_status === 'מגיע');
-    const pending   = guests.filter(g => g.rsvp_status === 'ממתין');
-    const rsvpYesCount        = attending.length;
-    const pendingCount        = pending.length;
+    const pending = guests.filter(g => g.rsvp_status === 'ממתין');
+    const rsvpYesCount = attending.length;
+    const pendingCount = pending.length;
     const expectedAttendees = guests.reduce((sum, g) => {
       if (g.rsvp_status === 'לא מגיע') return sum;
       return sum + ((g.arrival_probability ?? 100) / 100);
     }, 0);
     const safeVenueCommitment = Math.floor(expectedAttendees * 0.9);
-    const totalExpectedGifts  = guests.reduce((sum, g) => {
+    const totalExpectedGifts = guests.reduce((sum, g) => {
       if (g.rsvp_status === 'לא מגיע') return sum;
       return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
-    const totalActualGifts    = guests.reduce((s, g) => s + num(g.actual_gift), 0);
+    const totalActualGifts = guests.reduce((s, g) => s + num(g.actual_gift), 0);
 
-    const bepPerGuest   = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
+    const bepPerGuest = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
     const netProfitLoss = totalExpectedGifts - totalExpensesWithBuffer;
 
     const expensesByCategory = EXPENSE_CATEGORIES
       .map(cat => ({ name: cat, value: expenses.filter(e => e.category === cat).reduce((s, e) => s + num(e.total_cost), 0) }))
       .filter(c => c.value > 0);
 
-    const tasksDone  = tasks.filter(t => t.done).length;
+    const tasksDone = tasks.filter(t => t.done).length;
     const tasksTotal = tasks.length;
 
     return {
@@ -323,8 +323,8 @@ function ToastContainer() {
             ${t.fading ? 'animate-fade-out' : 'animate-slide-up'}
             ${t.type === 'error' ? 'bg-red-500 text-white' : 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'}
           `}>
-          {t.type === 'success' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-          {t.type === 'error' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+          {t.type === 'success' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>}
+          {t.type === 'error' && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>}
           {t.msg}
         </div>
       ))}
@@ -354,14 +354,14 @@ function ConfirmModal() {
 function DonutChart({ data }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return <div className="flex items-center justify-center h-44 text-slate-400 text-sm border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">אין נתוני הוצאות עדיין</div>;
-  const SIZE = 200, R = 85, IR = 45, CX = SIZE/2, CY = SIZE/2;
-  const slices = []; let angle = -Math.PI/2;
+  const SIZE = 200, R = 85, IR = 45, CX = SIZE / 2, CY = SIZE / 2;
+  const slices = []; let angle = -Math.PI / 2;
   data.forEach((item) => {
-    const sweep = (item.value/total)*2*Math.PI, s = angle, e = angle+sweep; angle = e;
+    const sweep = (item.value / total) * 2 * Math.PI, s = angle, e = angle + sweep; angle = e;
     const la = sweep > Math.PI ? 1 : 0, cos = Math.cos, sin = Math.sin;
-    const d = [`M ${CX+R*cos(s)} ${CY+R*sin(s)}`,`A ${R} ${R} 0 ${la} 1 ${CX+R*cos(e)} ${CY+R*sin(e)}`,`L ${CX+IR*cos(e)} ${CY+IR*sin(e)}`,`A ${IR} ${IR} 0 ${la} 0 ${CX+IR*cos(s)} ${CY+IR*sin(s)}`,'Z'].join(' ');
-    const mid = s+sweep/2, lr = (R+IR)/2;
-    slices.push({ ...item, d, lx: CX+lr*cos(mid), ly: CY+lr*sin(mid), pct: (item.value/total*100).toFixed(0) });
+    const d = [`M ${CX + R * cos(s)} ${CY + R * sin(s)}`, `A ${R} ${R} 0 ${la} 1 ${CX + R * cos(e)} ${CY + R * sin(e)}`, `L ${CX + IR * cos(e)} ${CY + IR * sin(e)}`, `A ${IR} ${IR} 0 ${la} 0 ${CX + IR * cos(s)} ${CY + IR * sin(s)}`, 'Z'].join(' ');
+    const mid = s + sweep / 2, lr = (R + IR) / 2;
+    slices.push({ ...item, d, lx: CX + lr * cos(mid), ly: CY + lr * sin(mid), pct: (item.value / total * 100).toFixed(0) });
   });
   return (
     <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8">
@@ -369,8 +369,8 @@ function DonutChart({ data }) {
         <svg width={SIZE} height={SIZE} className="flex-shrink-0 drop-shadow-xl transition-transform duration-500 group-hover:scale-105">
           {slices.map(s => (
             <g key={s.name} className="transition-all duration-300 hover:opacity-80">
-              <path d={s.d} fill={CAT_COLORS[s.name]||'#6366f1'} stroke="currentColor" className="stroke-white dark:stroke-slate-800" strokeWidth="3"><title>{s.name}: {fmt(s.value)}</title></path>
-              {parseFloat(s.pct) >= 8 && <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="800" fill="white" style={{textShadow: '0px 1px 3px rgba(0,0,0,0.4)'}}>{s.pct}%</text>}
+              <path d={s.d} fill={CAT_COLORS[s.name] || '#6366f1'} stroke="currentColor" className="stroke-white dark:stroke-slate-800" strokeWidth="3"><title>{s.name}: {fmt(s.value)}</title></path>
+              {parseFloat(s.pct) >= 8 && <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="800" fill="white" style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.4)' }}>{s.pct}%</text>}
             </g>
           ))}
         </svg>
@@ -384,7 +384,7 @@ function DonutChart({ data }) {
       <div className="space-y-3 w-full min-w-0">
         {slices.map(s => (
           <div key={s.name} className="flex items-center gap-3 text-xs min-w-0 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ background: CAT_COLORS[s.name]||'#6366f1' }}></span>
+            <span className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" style={{ background: CAT_COLORS[s.name] || '#6366f1' }}></span>
             <span className="text-slate-600 dark:text-slate-300 font-medium truncate flex-1">{s.name}</span>
             <span className="font-bold text-slate-900 dark:text-slate-100 flex-shrink-0 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md">{fmt(s.value)}</span>
           </div>
@@ -396,9 +396,9 @@ function DonutChart({ data }) {
 
 function BarChart({ items }) {
   const maxVal = Math.max(...items.map(d => d.amount), 1);
-  const W = 320, H = 220, pad = {t:32,r:16,b:56,l:60}, cW = W-pad.l-pad.r, cH = H-pad.t-pad.b, slot = cW/items.length, bW = slot*0.4, TICKS = 4;
+  const W = 320, H = 220, pad = { t: 32, r: 16, b: 56, l: 60 }, cW = W - pad.l - pad.r, cH = H - pad.t - pad.b, slot = cW / items.length, bW = slot * 0.4, TICKS = 4;
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:'visible' }} className="drop-shadow-sm">
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }} className="drop-shadow-sm">
       <defs>
         {items.map((item, i) => (
           <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -407,23 +407,23 @@ function BarChart({ items }) {
           </linearGradient>
         ))}
       </defs>
-      {Array.from({length:TICKS+1},(_,i) => {
-        const v = maxVal*i/TICKS, y = pad.t+cH-(v/maxVal)*cH;
-        return <g key={i}><line x1={pad.l} y1={y} x2={pad.l+cW} y2={y} className="stroke-slate-200 dark:stroke-slate-700/50" strokeWidth="1" strokeDasharray="4 4" /><text x={pad.l-8} y={y} textAnchor="end" dominantBaseline="middle" fontSize="10" className="fill-slate-400 dark:fill-slate-500 font-medium">₪{(v/1000).toFixed(0)}k</text></g>;
+      {Array.from({ length: TICKS + 1 }, (_, i) => {
+        const v = maxVal * i / TICKS, y = pad.t + cH - (v / maxVal) * cH;
+        return <g key={i}><line x1={pad.l} y1={y} x2={pad.l + cW} y2={y} className="stroke-slate-200 dark:stroke-slate-700/50" strokeWidth="1" strokeDasharray="4 4" /><text x={pad.l - 8} y={y} textAnchor="end" dominantBaseline="middle" fontSize="10" className="fill-slate-400 dark:fill-slate-500 font-medium">₪{(v / 1000).toFixed(0)}k</text></g>;
       })}
-      {items.map((item,i) => {
-        const bH = (item.amount/maxVal)*cH, x = pad.l+i*slot+slot/2-bW/2, y = pad.t+cH-bH;
+      {items.map((item, i) => {
+        const bH = (item.amount / maxVal) * cH, x = pad.l + i * slot + slot / 2 - bW / 2, y = pad.t + cH - bH;
         return (
           <g key={item.name} className="transition-all duration-500 group">
             <rect x={x} y={y} width={bW} height={bH} fill={`url(#grad-${i})`} rx="6" className="cursor-pointer transition-all duration-300 group-hover:opacity-80"><title>{item.name}: {fmt(item.amount)}</title></rect>
-            <text x={x+bW/2} y={y-8} textAnchor="middle" fontSize="11" fontWeight="800" className="fill-slate-700 dark:fill-slate-200">{fmt(item.amount)}</text>
-            <text x={x+bW/2} y={pad.t+cH+16} textAnchor="middle" fontSize="10" className="fill-slate-500 dark:fill-slate-400 font-semibold">
-              {item.name.split(' ').map((w,wi) => <tspan key={wi} x={x+bW/2} dy={wi===0?0:14}>{w}</tspan>)}
+            <text x={x + bW / 2} y={y - 8} textAnchor="middle" fontSize="11" fontWeight="800" className="fill-slate-700 dark:fill-slate-200">{fmt(item.amount)}</text>
+            <text x={x + bW / 2} y={pad.t + cH + 16} textAnchor="middle" fontSize="10" className="fill-slate-500 dark:fill-slate-400 font-semibold">
+              {item.name.split(' ').map((w, wi) => <tspan key={wi} x={x + bW / 2} dy={wi === 0 ? 0 : 14}>{w}</tspan>)}
             </text>
           </g>
         );
       })}
-      <line x1={pad.l} y1={pad.t+cH} x2={pad.l+cW} y2={pad.t+cH} className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="2"/>
+      <line x1={pad.l} y1={pad.t + cH} x2={pad.l + cW} y2={pad.t + cH} className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="2" />
     </svg>
   );
 }
@@ -434,29 +434,29 @@ function Card({ children, className = '' }) {
 }
 function KpiCard({ title, value, sub, color }) {
   const p = {
-    indigo:'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
-    purple:'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+    indigo: 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+    purple: 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
     green: 'border-emerald-200  bg-emerald-50  text-emerald-700  dark:border-emerald-800  dark:bg-emerald-900/40  dark:text-emerald-300',
     amber: 'border-amber-200  bg-amber-50  text-amber-700  dark:border-amber-800  dark:bg-amber-900/40  dark:text-amber-300',
-    blue:  'border-blue-200   bg-blue-50   text-blue-700   dark:border-blue-800   dark:bg-blue-900/40   dark:text-blue-300',
-    red:   'border-rose-200    bg-rose-50    text-rose-700    dark:border-rose-800    dark:bg-rose-900/40    dark:text-rose-300',
+    blue: 'border-blue-200   bg-blue-50   text-blue-700   dark:border-blue-800   dark:bg-blue-900/40   dark:text-blue-300',
+    red: 'border-rose-200    bg-rose-50    text-rose-700    dark:border-rose-800    dark:bg-rose-900/40    dark:text-rose-300',
   };
   return (
-    <div className={`rounded-3xl border p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${p[color]||p.indigo}`}>
+    <div className={`rounded-3xl border p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${p[color] || p.indigo}`}>
       <p className="text-[11px] font-bold uppercase tracking-widest opacity-60 mb-2">{title}</p>
       <p className="text-3xl font-extrabold leading-tight">{value}</p>
       {sub && <p className="text-[10px] mt-2 font-medium opacity-80 leading-snug bg-black/5 dark:bg-white/5 inline-block px-2 py-1 rounded">{sub}</p>}
     </div>
   );
 }
-function Btn({ children, onClick, variant='primary', size='md', type='button', disabled=false }) {
+function Btn({ children, onClick, variant = 'primary', size = 'md', type = 'button', disabled = false }) {
   const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none disabled:opacity-40';
-  const sz = { sm:'px-2.5 py-1 text-xs', md:'px-4 py-2 text-sm' };
+  const sz = { sm: 'px-2.5 py-1 text-xs', md: 'px-4 py-2 text-sm' };
   const v = {
-    primary:  'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm',
-    secondary:'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600',
-    ghost:    'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30',
-    danger:   'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30',
+    primary: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm',
+    secondary: 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600',
+    ghost: 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30',
+    danger: 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30',
   };
   return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${sz[size]} ${v[variant]}`}>{children}</button>;
 }
@@ -470,7 +470,7 @@ function Field({ label, children, hint }) {
     </div>
   );
 }
-function TextInput({ name, value, onChange, type='text', placeholder, required, min }) {
+function TextInput({ name, value, onChange, type = 'text', placeholder, required, min }) {
   return (
     <input name={name} value={value} onChange={onChange} type={type} placeholder={placeholder} required={required} min={min}
       className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
@@ -497,8 +497,8 @@ function Modal({ title, children, onClose }) {
     </div>
   );
 }
-function FilterPill({ active, color='indigo', onClick, children }) {
-  const on  = color === 'indigo' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-purple-600 text-white border-purple-600';
+function FilterPill({ active, color = 'indigo', onClick, children }) {
+  const on = color === 'indigo' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-purple-600 text-white border-purple-600';
   const off = 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700';
   return <button onClick={onClick} className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${active ? on : off}`}>{children}</button>;
 }
@@ -507,7 +507,7 @@ function FilterPill({ active, color='indigo', onClick, children }) {
 // ── Countdown Widget ───────────────────────────────────────────────────────
 function HeroSection() {
   // If the date isn't set, this should be null.
-  const WEDDING_DATE = null; 
+  const WEDDING_DATE = null;
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
@@ -528,14 +528,14 @@ function HeroSection() {
   }, [WEDDING_DATE]);
 
   return (
-    <div 
-      className="relative overflow-hidden rounded-3xl p-8 sm:p-12 min-h-[300px] sm:min-h-[400px] flex items-center shadow-2xl group bg-cover bg-[position:center_40%] transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
+    <div
+      className="relative overflow-hidden rounded-3xl p-8 sm:p-12 min-h-[300px] sm:min-h-[400px] flex items-center shadow-2xl group bg-cover bg-[position:center_35%] transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
       style={{ backgroundImage: "url('/couple.jpg')" }}
     >
       {/* Elegant dark overlay to ensure text is always readable against any photo */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-slate-900/20"></div>
       <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply group-hover:bg-indigo-900/10 transition-colors duration-700"></div>
-      
+
       <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
         <div className="text-center md:text-right space-y-3">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
@@ -551,7 +551,7 @@ function HeroSection() {
             </p>
           )}
         </div>
-        
+
         {!WEDDING_DATE ? (
           <div className="flex-shrink-0">
             <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -590,7 +590,7 @@ function Dashboard() {
 
   const barItems = [
     { name: 'סה״כ הוצאות', amount: totalExpensesWithBuffer, fill: '#6366f1' },
-    { name: 'מתנות צפויות', amount: totalExpectedGifts,      fill: '#10b981' },
+    { name: 'מתנות צפויות', amount: totalExpectedGifts, fill: '#10b981' },
   ];
   const isProfit = netProfitLoss >= 0;
 
@@ -607,13 +607,12 @@ function Dashboard() {
 
       {/* Bento Box Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 auto-rows-min">
-        
+
         {/* Profit/Loss Feature Card - Spans 2 columns on desktop */}
-        <div className={`col-span-1 md:col-span-2 rounded-3xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
-          isProfit 
-            ? 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/40' 
-            : 'bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/20 dark:to-red-900/40'
-        }`}>
+        <div className={`col-span-1 md:col-span-2 rounded-3xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${isProfit
+          ? 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/40'
+          : 'bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/20 dark:to-red-900/40'
+          }`}>
           <p className={`text-xs font-bold uppercase tracking-widest ${isProfit ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
             תחזית תקציב עכשווית
           </p>
@@ -632,7 +631,7 @@ function Dashboard() {
           <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ הוצאות</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpensesWithBuffer)}</h3>
           <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-orange-400"></span> 
+            <span className="inline-block w-2 h-2 rounded-full bg-orange-400"></span>
             {fmt(contingencyBuffer)} כרית ביטחון (10%)
           </p>
         </div>
@@ -642,7 +641,7 @@ function Dashboard() {
           <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">מתנות צפויות</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpectedGifts)}</h3>
           <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span> 
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
             מבוסס על {rsvpYesCount + pendingCount} אורחים פוטנציאליים
           </p>
         </div>
@@ -658,7 +657,7 @@ function Dashboard() {
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">סה״כ מוזמנים</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
             <div>
               <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
@@ -715,7 +714,7 @@ function Dashboard() {
             <span className="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full">{tasksDone}/{tasksTotal} מוכנים</span>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 shadow-inner overflow-hidden relative">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${tasksTotal ? tasksDone/tasksTotal*100 : 0}%` }}></div>
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${tasksTotal ? tasksDone / tasksTotal * 100 : 0}%` }}></div>
             <div className="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[slide_1s_linear_infinite]" style={{ backgroundSize: '1rem 1rem' }}></div>
           </div>
         </div>
@@ -774,11 +773,11 @@ function Expenses() {
   const { expenses, addExpense, updateExpense, deleteExpense, metrics, confirm } = useApp();
   const [modal, setModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const handleSave = (data) => { if (modal === 'new') addExpense(data); else updateExpense(modal.id, data); setModal(null); };
-  
-  const filteredExpenses = expenses.filter(exp => 
-    exp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+
+  const filteredExpenses = expenses.filter(exp =>
+    exp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     exp.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -792,9 +791,9 @@ function Expenses() {
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="w-full md:w-72 relative">
-          <input 
-            type="text" 
-            placeholder="חיפוש הוצאה או קטגוריה..." 
+          <input
+            type="text"
+            placeholder="חיפוש הוצאה או קטגוריה..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -802,7 +801,7 @@ function Expenses() {
           <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
         </div>
         <div className="flex flex-wrap gap-4 text-[11px] text-slate-500 dark:text-slate-400">
-          {[['#6366f1','עלות כוללת'],['#f97316','מקדמה ששולמה'],['#3b82f6','יתרה לתשלום']].map(([c,l]) => (
+          {[['#6366f1', 'עלות כוללת'], ['#f97316', 'מקדמה ששולמה'], ['#3b82f6', 'יתרה לתשלום']].map(([c, l]) => (
             <span key={l} className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full shadow-sm" style={{ background: c }}></span>{l}</span>
           ))}
         </div>
@@ -819,17 +818,17 @@ function Expenses() {
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="font-bold text-slate-900 dark:text-slate-100">{exp.name}</h3>
-                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category]||'#6366f1')+'20', color: CAT_COLORS[exp.category]||'#6366f1' }}>{exp.category}</span>
+                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category] || '#6366f1') + '20', color: CAT_COLORS[exp.category] || '#6366f1' }}>{exp.category}</span>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setModal(exp)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                    <button onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if(yes) deleteExpense(exp.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                    <button onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if (yes) deleteExpense(exp.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
                   </div>
                 </div>
                 <div className="flex justify-between text-xs mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
                   <div className="flex flex-col"><span className="text-slate-500">עלות</span><span className="font-semibold">{fmt(exp.total_cost)}</span></div>
                   <div className="flex flex-col items-center"><span className="text-slate-500">מקדמה</span><span className="font-semibold text-orange-500">{fmt(exp.deposit_paid)}</span></div>
-                  <div className="flex flex-col items-end"><span className="text-slate-500">יתרה</span><span className="font-semibold text-blue-600">{fmt(num(exp.total_cost)-num(exp.deposit_paid))}</span></div>
+                  <div className="flex flex-col items-end"><span className="text-slate-500">יתרה</span><span className="font-semibold text-blue-600">{fmt(num(exp.total_cost) - num(exp.deposit_paid))}</span></div>
                 </div>
               </div>
             ))}
@@ -853,15 +852,15 @@ function Expenses() {
                   <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{exp.name}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category]||'#6366f1')+'20', color: CAT_COLORS[exp.category]||'#6366f1' }}>{exp.category}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category] || '#6366f1') + '20', color: CAT_COLORS[exp.category] || '#6366f1' }}>{exp.category}</span>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">{fmt(exp.total_cost)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-orange-500">{fmt(exp.deposit_paid)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-blue-600">{fmt(num(exp.total_cost)-num(exp.deposit_paid))}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-blue-600">{fmt(num(exp.total_cost) - num(exp.deposit_paid))}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Btn variant="ghost" size="sm" onClick={() => setModal(exp)}>ערוך</Btn>
-                        <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if(yes) deleteExpense(exp.id); }) }}>✕</Btn>
+                        <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק הוצאה זו?').then(yes => { if (yes) deleteExpense(exp.id); }) }}>✕</Btn>
                       </div>
                     </td>
                   </tr>
@@ -923,14 +922,14 @@ function GuestModal({ guest, onSave, onClose }) {
 
 function Guests() {
   const { guests, addGuest, updateGuest, deleteGuest, metrics, addToast, confirm } = useApp();
-  const [modal, setModal]           = useState(null);
+  const [modal, setModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState('הכל');
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
-  
+
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
-  
+
   const filtered = guests.filter(g =>
     (rsvpFilter === 'הכל' || g.rsvp_status === rsvpFilter) &&
     (sideFilter === 'הכל' || g.side === sideFilter) &&
@@ -938,7 +937,7 @@ function Guests() {
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   const totalActual = guests.reduce((s, g) => s + num(g.actual_gift), 0);
-  
+
   const exportExcel = async () => {
     try {
       const XLSX = await import('xlsx');
@@ -961,16 +960,16 @@ function Guests() {
       addToast('שגיאה בייצוא הקובץ', 'error');
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {modal && <GuestModal guest={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">אורחים ואומדן מתנות</h2>
         <div className="flex gap-2">
           <button onClick={exportExcel} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             ייצא Excel
           </button>
           <Btn onClick={() => setModal('new')}>+ הוסף אורח</Btn>
@@ -979,11 +978,11 @@ function Guests() {
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label:'סה״כ מוזמנים',       val:metrics.totalInvited,        cls:'text-slate-800 dark:text-slate-100' },
-          { label:'אישרו הגעה',          val:metrics.rsvpYesCount,        cls:'text-emerald-600' },
-          { label:'ממתינים',             val:metrics.pendingCount,        cls:'text-amber-600' },
-          { label:'צפי הגעה משוקלל',      val:Math.round(metrics.expectedAttendees), cls:'text-blue-600 dark:text-blue-400' },
-          { label:'התחייבות ×0.9',       val:metrics.safeVenueCommitment, cls:'text-indigo-600 dark:text-indigo-400' },
+          { label: 'סה״כ מוזמנים', val: metrics.totalInvited, cls: 'text-slate-800 dark:text-slate-100' },
+          { label: 'אישרו הגעה', val: metrics.rsvpYesCount, cls: 'text-emerald-600' },
+          { label: 'ממתינים', val: metrics.pendingCount, cls: 'text-amber-600' },
+          { label: 'צפי הגעה משוקלל', val: Math.round(metrics.expectedAttendees), cls: 'text-blue-600 dark:text-blue-400' },
+          { label: 'התחייבות ×0.9', val: metrics.safeVenueCommitment, cls: 'text-indigo-600 dark:text-indigo-400' },
         ].map(({ label, val, cls }) => (
           <Card key={label} className="p-4 text-center shadow-sm">
             <div className={`text-2xl font-bold ${cls}`}>{val}</div>
@@ -998,16 +997,16 @@ function Guests() {
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="w-full md:w-64 relative">
-          <input 
-            type="text" 
-            placeholder="חיפוש לפי שם אורח..." 
+          <input
+            type="text"
+            placeholder="חיפוש לפי שם אורח..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
         </div>
-        
+
         <div className="flex flex-wrap gap-x-4 gap-y-2 w-full md:w-auto">
           <div className="flex flex-wrap gap-1">
             {['הכל', ...RSVP_STATUSES].map(s => <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s}</FilterPill>)}
@@ -1041,7 +1040,7 @@ function Guests() {
                 <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500">בפועל</span><span className="font-semibold text-emerald-600 text-sm">{num(g.actual_gift) > 0 ? fmt(g.actual_gift) : '—'}</span></div>
                 <div className="flex gap-1">
                   <button onClick={() => setModal(g)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✎</button>
-                  <button onClick={() => { confirm('להסיר אורח זה?').then(yes => { if(yes) deleteGuest(g.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
+                  <button onClick={() => { confirm('להסיר אורח זה?').then(yes => { if (yes) deleteGuest(g.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
                 </div>
               </div>
             </div>
@@ -1085,7 +1084,7 @@ function Guests() {
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Btn variant="ghost" size="sm" onClick={() => setModal(g)}>ערוך</Btn>
-                      <Btn variant="danger" size="sm" onClick={() => { confirm('להסיר אורח זה?').then(yes => { if(yes) deleteGuest(g.id); }) }}>✕</Btn>
+                      <Btn variant="danger" size="sm" onClick={() => { confirm('להסיר אורח זה?').then(yes => { if (yes) deleteGuest(g.id); }) }}>✕</Btn>
                     </div>
                   </td>
                 </tr>
@@ -1137,22 +1136,22 @@ function TaskModal({ task, onSave, onClose }) {
 
 function Checklist() {
   const { tasks, addTask, toggleTask, updateTask, deleteTask, confirm } = useApp();
-  const [modal, setModal]         = useState(null);
+  const [modal, setModal] = useState(null);
   const [catFilter, setCatFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const handleSave = (data) => { if (modal === 'new') addTask(data); else updateTask(modal.id, data); setModal(null); };
-  
-  const filtered = tasks.filter(t => 
+
+  const filtered = tasks.filter(t =>
     (catFilter === 'הכל' || t.category === catFilter) &&
     (t.text.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   const done = tasks.filter(t => t.done).length;
-  
+
   return (
     <div className="space-y-6">
       {modal && <TaskModal task={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">רשימת מטלות</h2>
@@ -1165,19 +1164,19 @@ function Checklist() {
         <Card className="p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">התקדמות כללית</span>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{Math.round(done/tasks.length*100)}%</span>
+            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{Math.round(done / tasks.length * 100)}%</span>
           </div>
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-            <div className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${done/tasks.length*100}%` }}></div>
+            <div className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${done / tasks.length * 100}%` }}></div>
           </div>
         </Card>
       )}
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="w-full md:w-64 relative">
-          <input 
-            type="text" 
-            placeholder="חיפוש משימה..." 
+          <input
+            type="text"
+            placeholder="חיפוש משימה..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1196,9 +1195,8 @@ function Checklist() {
           {filtered.map(t => (
             <Card key={t.id} className={`p-4 flex items-center gap-4 transition-all duration-300 ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md'}`}>
               <button onClick={() => toggleTask(t.id)}
-                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                  t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'
-                }`}>
+                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'
+                  }`}>
                 {t.done && <span className="text-white text-xs font-bold leading-none">✓</span>}
               </button>
               <div className="flex-1 min-w-0">
@@ -1210,7 +1208,7 @@ function Checklist() {
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button onClick={() => setModal(t)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                <button onClick={() => { confirm('למחוק משימה זו?').then(yes => { if(yes) deleteTask(t.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                <button onClick={() => { confirm('למחוק משימה זו?').then(yes => { if (yes) deleteTask(t.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
               </div>
             </Card>
           ))}
@@ -1256,40 +1254,40 @@ function VendorModal({ vendor, onSave, onClose }) {
 
 function Vendors() {
   const { vendors, addVendor, updateVendor, deleteVendor, confirm } = useApp();
-  const [modal, setModal]             = useState(null);
+  const [modal, setModal] = useState(null);
   const [statusFilter, setStatusFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const handleSave = (data) => { if (modal === 'new') addVendor(data); else updateVendor(modal.id, data); setModal(null); };
-  
-  const filtered = vendors.filter(v => 
+
+  const filtered = vendors.filter(v =>
     (statusFilter === 'הכל' || v.status === statusFilter) &&
     (v.name.toLowerCase().includes(searchQuery.toLowerCase()) || v.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-  
+
   const totalContract = vendors.reduce((s, v) => s + num(v.contract_amount), 0);
-  const totalPaid     = vendors.reduce((s, v) => s + num(v.paid_amount), 0);
-  
+  const totalPaid = vendors.reduce((s, v) => s + num(v.paid_amount), 0);
+
   return (
     <div className="space-y-6">
       {modal && <VendorModal vendor={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">ניהול ספקים</h2>
         <Btn onClick={() => setModal('new')}>+ הוסף ספק</Btn>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <KpiCard title="סה״כ חוזים"    value={fmt(totalContract)}           color="indigo" />
-        <KpiCard title="שולם לספקים"   value={fmt(totalPaid)}               color="green" />
-        <KpiCard title="יתרה לספקים"   value={fmt(totalContract-totalPaid)} color="amber" />
+        <KpiCard title="סה״כ חוזים" value={fmt(totalContract)} color="indigo" />
+        <KpiCard title="שולם לספקים" value={fmt(totalPaid)} color="green" />
+        <KpiCard title="יתרה לספקים" value={fmt(totalContract - totalPaid)} color="amber" />
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="w-full md:w-64 relative">
-          <input 
-            type="text" 
-            placeholder="חיפוש ספק או קטגוריה..." 
+          <input
+            type="text"
+            placeholder="חיפוש ספק או קטגוריה..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1307,7 +1305,7 @@ function Vendors() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(v => {
             const remaining = num(v.contract_amount) - num(v.paid_amount);
-            const pct = v.contract_amount > 0 ? Math.min(100, num(v.paid_amount)/num(v.contract_amount)*100) : 0;
+            const pct = v.contract_amount > 0 ? Math.min(100, num(v.paid_amount) / num(v.contract_amount) * 100) : 0;
             return (
               <Card key={v.id} className="p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
@@ -1325,7 +1323,7 @@ function Vendors() {
                       </p>
                     )}
                     {v.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">{v.notes}</p>}
-                    
+
                     {v.contract_amount > 0 && (
                       <div className="mt-4">
                         <div className="flex justify-between text-[11px] mb-1.5">
@@ -1340,7 +1338,7 @@ function Vendors() {
                   </div>
                   <div className="flex flex-col items-center gap-2 flex-shrink-0">
                     <button onClick={() => setModal(v)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                    <button onClick={() => { confirm('למחוק ספק זה?').then(yes => { if(yes) deleteVendor(v.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                    <button onClick={() => { confirm('למחוק ספק זה?').then(yes => { if (yes) deleteVendor(v.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
                   </div>
                 </div>
               </Card>
@@ -1376,9 +1374,9 @@ function Seating() {
   const [modal, setModal] = useState(null);
   const handleSave = (data) => { if (modal === 'new') addTable(data); else updateTable(modal.id, data); setModal(null); };
 
-  const assignedIds   = new Set(tables.flatMap(t => t.guest_ids));
-  const unassigned    = guests.filter(g => g.rsvp_status === 'מגיע' && !assignedIds.has(g.id));
-  const totalSeats    = tables.reduce((s, t) => s + num(t.capacity), 0);
+  const assignedIds = new Set(tables.flatMap(t => t.guest_ids));
+  const unassigned = guests.filter(g => g.rsvp_status === 'מגיע' && !assignedIds.has(g.id));
+  const totalSeats = tables.reduce((s, t) => s + num(t.capacity), 0);
 
   return (
     <div className="space-y-6">
@@ -1389,8 +1387,8 @@ function Seating() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <KpiCard title="שולחנות"        value={tables.length}   color="indigo" />
-        <KpiCard title="מושבים בסה״כ"  value={totalSeats}      color="blue" />
+        <KpiCard title="שולחנות" value={tables.length} color="indigo" />
+        <KpiCard title="מושבים בסה״כ" value={totalSeats} color="blue" />
         <KpiCard title="ממתינים לשיבוץ" value={unassigned.length} color={unassigned.length > 0 ? 'amber' : 'green'} sub="מגיעים ללא שולחן" />
       </div>
 
@@ -1422,9 +1420,9 @@ function Seating() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {tables.map(t => {
-            const seated  = t.guest_ids.map(id => guests.find(g => g.id === id)).filter(Boolean);
-            const free    = num(t.capacity) - seated.length;
-            const isFull  = free <= 0;
+            const seated = t.guest_ids.map(id => guests.find(g => g.id === id)).filter(Boolean);
+            const free = num(t.capacity) - seated.length;
+            const isFull = free <= 0;
             return (
               <Card key={t.id} className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1436,11 +1434,11 @@ function Seating() {
                   </div>
                   <div className="flex gap-1">
                     <Btn variant="ghost" size="sm" onClick={() => setModal(t)}>ערוך</Btn>
-                    <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק שולחן זה?').then(yes => { if(yes) deleteTable(t.id); }) }}>✕</Btn>
+                    <Btn variant="danger" size="sm" onClick={() => { confirm('למחוק שולחן זה?').then(yes => { if (yes) deleteTable(t.id); }) }}>✕</Btn>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-3">
-                  <div className={`h-1.5 rounded-full ${isFull ? 'bg-red-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(100, seated.length/num(t.capacity)*100)}%` }}></div>
+                  <div className={`h-1.5 rounded-full ${isFull ? 'bg-red-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(100, seated.length / num(t.capacity) * 100)}%` }}></div>
                 </div>
                 <div className="space-y-1.5">
                   {seated.map(g => (
@@ -1462,12 +1460,12 @@ function Seating() {
 
 // ── App shell ──────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'dashboard', label: 'לוח בקרה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> },
-  { id: 'expenses',  label: 'הוצאות',   icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> },
-  { id: 'guests',    label: 'אורחים',   icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { id: 'checklist', label: 'מטלות',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
-  { id: 'vendors',   label: 'ספקים',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
-  { id: 'seating',   label: 'ישיבה',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M5 5l1.5 1.5"/><path d="M17.5 17.5L19 19"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M5 19l1.5-1.5"/><path d="M17.5 6.5L19 5"/></svg> },
+  { id: 'dashboard', label: 'לוח בקרה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg> },
+  { id: 'expenses', label: 'הוצאות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg> },
+  { id: 'guests', label: 'אורחים', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+  { id: 'checklist', label: 'מטלות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
+  { id: 'vendors', label: 'ספקים', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg> },
+  { id: 'seating', label: 'ישיבה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="M5 5l1.5 1.5" /><path d="M17.5 17.5L19 19" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="M5 19l1.5-1.5" /><path d="M17.5 6.5L19 5" /></svg> },
 ];
 
 function HeaderButtons() {
@@ -1476,8 +1474,8 @@ function HeaderButtons() {
   const pill = saveStatus === 'saving'
     ? { text: 'שומר…', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }
     : saveStatus === 'error'
-    ? { text: 'שמירה נכשלה', cls: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300' }
-    : null;
+      ? { text: 'שמירה נכשלה', cls: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300' }
+      : null;
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
       {pill && <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full ${pill.cls}`}>{pill.text}</span>}
@@ -1508,11 +1506,10 @@ function App() {
               <nav className="flex overflow-x-auto no-scrollbar">
                 {TABS.map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)}
-                    className={`flex items-center gap-2.5 px-5 py-4 text-[13px] font-semibold border-b-2 transition-all whitespace-nowrap ${
-                      tab === t.id
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
-                    }`}>
+                    className={`flex items-center gap-2.5 px-5 py-4 text-[13px] font-semibold border-b-2 transition-all whitespace-nowrap ${tab === t.id
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                      : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
+                      }`}>
                     <span className="opacity-90">{t.icon}</span><span>{t.label}</span>
                   </button>
                 ))}
@@ -1522,28 +1519,27 @@ function App() {
 
           <main className="max-w-6xl mx-auto px-4 py-8">
             {tab === 'dashboard' && <Dashboard />}
-            {tab === 'expenses'  && <Expenses />}
-            {tab === 'guests'    && <Guests />}
+            {tab === 'expenses' && <Expenses />}
+            {tab === 'guests' && <Guests />}
             {tab === 'checklist' && <Checklist />}
-            {tab === 'vendors'   && <Vendors />}
-            {tab === 'seating'   && <Seating />}
+            {tab === 'vendors' && <Vendors />}
+            {tab === 'seating' && <Seating />}
           </main>
 
           {/* Mobile Bottom Navigation */}
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 z-40 px-2 py-2 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-safe">
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
-                  tab === t.id
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}>
+                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${tab === t.id
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                  }`}>
                 <span className={`mb-1 transition-transform duration-300 ${tab === t.id ? 'scale-110 drop-shadow-sm' : ''}`}>{t.icon}</span>
                 <span className={`text-[10px] transition-all duration-300 ${tab === t.id ? 'font-bold' : 'font-medium'}`}>{t.label}</span>
               </button>
             ))}
           </nav>
-          
+
           <ToastContainer />
           <ConfirmModal />
         </div>
