@@ -1,25 +1,21 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Assistant } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const assistant = Assistant({
+  variable: "--font-assistant",
+  subsets: ["hebrew", "latin"],
+  weight: ["300", "400", "600", "700", "800"],
 });
 
 export const metadata = {
-  title: "💍 מנהל כספים ואורחים לחתונה",
-  description: "Wedding Management App",
+  title: "💍 Wedding Planner",
+  description: "Premium Wedding Management App",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="he" dir="rtl" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="bg-slate-100 dark:bg-gray-900 min-h-screen">
+    <html lang="he" dir="rtl" className={`${assistant.variable} antialiased`}>
+      <body className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-100 font-sans selection:bg-rose-200 selection:text-rose-900">
         {children}
       </body>
     </html>

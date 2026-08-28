@@ -427,6 +427,60 @@ function FilterPill({ active, color='indigo', onClick, children }) {
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
+// ── Countdown Widget ───────────────────────────────────────────────────────
+function Countdown() {
+  const WEDDING_DATE = new Date('2027-08-28T18:00:00');
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    const calc = () => {
+      const diff = WEDDING_DATE - new Date();
+      if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
+      return {
+        d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        m: Math.floor((diff / 1000 / 60) % 60),
+        s: Math.floor((diff / 1000) % 60),
+      };
+    };
+    setTimeLeft(calc());
+    const timer = setInterval(() => setTimeLeft(calc()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-rose-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl"></div>
+      <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-indigo-900 opacity-20 rounded-full blur-2xl"></div>
+      
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="text-center md:text-right">
+          <h3 className="text-2xl font-bold mb-1">החתונה שלכם מתקרבת! 💍</h3>
+          <p className="text-indigo-100 text-sm">28 באוגוסט 2027</p>
+        </div>
+        
+        <div className="flex gap-4 sm:gap-6" dir="ltr">
+          {[
+            { label: 'ימים', value: timeLeft.d },
+            { label: 'שעות', value: timeLeft.h },
+            { label: 'דקות', value: timeLeft.m },
+            { label: 'שניות', value: timeLeft.s }
+          ].map((unit, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className="bg-white/20 backdrop-blur-md rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center border border-white/20 shadow-inner">
+                <span className="text-2xl sm:text-3xl font-bold">{unit.value}</span>
+              </div>
+              <span className="text-xs mt-2 text-indigo-100 font-medium">{unit.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard() {
   const { metrics } = useApp();
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
@@ -442,9 +496,11 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">לוח בקרה ראשי</h2>
-        <span className="text-[11px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-semibold px-3 py-1 rounded-full">חי</span>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">לוח בקרה ראשי</h2>
+        <span className="text-[11px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-semibold px-3 py-1 rounded-full animate-pulse">חי</span>
       </div>
+
+      <Countdown />
 
       {tasksTotal > 0 && (
         <Card className="p-4">
@@ -540,27 +596,73 @@ function ExpenseModal({ expense, onSave, onClose }) {
 function Expenses() {
   const { expenses, addExpense, updateExpense, deleteExpense, metrics } = useApp();
   const [modal, setModal] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const handleSave = (data) => { if (modal === 'new') addExpense(data); else updateExpense(modal.id, data); setModal(null); };
+  
+  const filteredExpenses = expenses.filter(exp => 
+    exp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    exp.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {modal && <ExpenseModal expense={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">מעקב הוצאות</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">מעקב הוצאות</h2>
         <Btn onClick={() => setModal('new')}>+ הוסף הוצאה</Btn>
       </div>
-      <div className="flex flex-wrap gap-4 text-[11px] text-gray-500 dark:text-gray-400">
-        {[['#6366f1','עלות כוללת'],['#f97316','מקדמה ששולמה'],['#3b82f6','יתרה לתשלום']].map(([c,l]) => (
-          <span key={l} className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: c }}></span>{l}</span>
-        ))}
+
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="w-full md:w-72 relative">
+          <input 
+            type="text" 
+            placeholder="חיפוש הוצאה או קטגוריה..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+        </div>
+        <div className="flex flex-wrap gap-4 text-[11px] text-slate-500 dark:text-slate-400">
+          {[['#6366f1','עלות כוללת'],['#f97316','מקדמה ששולמה'],['#3b82f6','יתרה לתשלום']].map(([c,l]) => (
+            <span key={l} className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full shadow-sm" style={{ background: c }}></span>{l}</span>
+          ))}
+        </div>
       </div>
-      {expenses.length === 0 ? (
-        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין הוצאות עדיין</p><p className="text-sm mt-1">לחץ על "+ הוסף הוצאה" כדי להתחיל</p></Card>
+
+      {filteredExpenses.length === 0 ? (
+        <Card className="p-12 text-center text-slate-400 border-dashed border-2 bg-transparent"><p className="text-lg font-medium">לא נמצאו הוצאות</p><p className="text-sm mt-1">נסה חיפוש אחר או הוסף הוצאה חדשה</p></Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
+        <Card className="overflow-hidden shadow-sm">
+          {/* Mobile View: Cards */}
+          <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-700">
+            {filteredExpenses.map(exp => (
+              <div key={exp.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100">{exp.name}</h3>
+                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category]||'#6366f1')+'20', color: CAT_COLORS[exp.category]||'#6366f1' }}>{exp.category}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => setModal(exp)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
+                    <button onClick={() => { if(window.confirm('למחוק הוצאה זו?')) deleteExpense(exp.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
+                  <div className="flex flex-col"><span className="text-slate-500">עלות</span><span className="font-semibold">{fmt(exp.total_cost)}</span></div>
+                  <div className="flex flex-col items-center"><span className="text-slate-500">מקדמה</span><span className="font-semibold text-orange-500">{fmt(exp.deposit_paid)}</span></div>
+                  <div className="flex flex-col items-end"><span className="text-slate-500">יתרה</span><span className="font-semibold text-blue-600">{fmt(num(exp.total_cost)-num(exp.deposit_paid))}</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600 text-[11px] uppercase tracking-widest text-gray-400">
+                <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 text-[11px] uppercase tracking-widest text-slate-500">
                   <th className="text-right px-4 py-3 font-semibold">הוצאה</th>
                   <th className="text-right px-4 py-3 font-semibold">קטגוריה</th>
                   <th className="text-right px-4 py-3 font-semibold">עלות כוללת</th>
@@ -569,14 +671,14 @@ function Expenses() {
                   <th className="text-center px-4 py-3 font-semibold w-28">פעולות</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {expenses.map(exp => (
-                  <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{exp.name}</td>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {filteredExpenses.map(exp => (
+                  <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{exp.name}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category]||'#6366f1')+'20', color: CAT_COLORS[exp.category]||'#6366f1' }}>{exp.category}</span>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{fmt(exp.total_cost)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">{fmt(exp.total_cost)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-orange-500">{fmt(exp.deposit_paid)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-blue-600">{fmt(num(exp.total_cost)-num(exp.deposit_paid))}</td>
                     <td className="px-4 py-3 text-center">
@@ -590,16 +692,16 @@ function Expenses() {
               </tbody>
             </table>
           </div>
-          <div className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 px-4 py-4 space-y-2">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300"><span>סכום ביניים</span><span className="font-semibold text-gray-900 dark:text-gray-100">{fmt(metrics.totalExpenses)}</span></div>
+          <div className="border-t-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-4 py-4 space-y-2">
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300"><span>סכום ביניים</span><span className="font-semibold text-slate-900 dark:text-slate-100">{fmt(metrics.totalExpenses)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-orange-600 font-medium">כרית ביטחון (10%)</span><span className="font-semibold text-orange-600">+ {fmt(metrics.contingencyBuffer)}</span></div>
-            <div className="flex justify-between text-base font-bold border-t border-gray-300 dark:border-gray-600 pt-2">
-              <span className="text-gray-900 dark:text-gray-100">סה״כ כולל כרית ביטחון</span>
-              <span className="text-indigo-700 dark:text-indigo-400">{fmt(metrics.totalExpensesWithBuffer)}</span>
+            <div className="flex justify-between text-base font-bold border-t border-slate-300 dark:border-slate-600 pt-2">
+              <span className="text-slate-900 dark:text-slate-100">סה״כ כולל כרית ביטחון</span>
+              <span className="text-indigo-600 dark:text-indigo-400">{fmt(metrics.totalExpensesWithBuffer)}</span>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 border-t border-dashed border-gray-300 dark:border-gray-600">
-              <span className="text-xs text-orange-500"><strong>מקדמות:</strong> {fmt(metrics.totalOutOfPocket)} <span className="text-gray-400">(מכיס לפני החתונה)</span></span>
-              <span className="text-xs text-blue-500 mr-auto"><strong>יתרה:</strong> {fmt(metrics.totalBalanceDue)} <span className="text-gray-400">(מכוסה ע״י מתנות)</span></span>
+            <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 border-t border-dashed border-slate-300 dark:border-slate-600">
+              <span className="text-xs text-orange-500"><strong>מקדמות:</strong> {fmt(metrics.totalOutOfPocket)} <span className="text-slate-400">(מכיס לפני החתונה)</span></span>
+              <span className="text-xs text-blue-500 mr-auto"><strong>יתרה:</strong> {fmt(metrics.totalBalanceDue)} <span className="text-slate-400">(מכוסה ע״י מתנות)</span></span>
             </div>
           </div>
         </Card>
@@ -640,57 +742,105 @@ function GuestModal({ guest, onSave, onClose }) {
 function Guests() {
   const { guests, addGuest, updateGuest, deleteGuest, metrics } = useApp();
   const [modal, setModal]           = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState('הכל');
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
+  
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
+  
   const filtered = guests.filter(g =>
     (rsvpFilter === 'הכל' || g.rsvp_status === rsvpFilter) &&
     (sideFilter === 'הכל' || g.side === sideFilter) &&
-    (groupFilter === 'הכל' || g.group === groupFilter)
+    (groupFilter === 'הכל' || g.group === groupFilter) &&
+    (g.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   const totalActual = guests.reduce((s, g) => s + num(g.actual_gift), 0);
+  
   return (
     <div className="space-y-6">
       {modal && <GuestModal guest={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">אורחים ואומדן מתנות</h2>
+      
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">אורחים ואומדן מתנות</h2>
         <Btn onClick={() => setModal('new')}>+ הוסף אורח</Btn>
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label:'סה״כ מוזמנים',       val:metrics.totalInvited,        cls:'text-gray-800 dark:text-gray-100' },
-          { label:'אישרו הגעה',          val:metrics.rsvpYesCount,        cls:'text-green-600' },
+          { label:'סה״כ מוזמנים',       val:metrics.totalInvited,        cls:'text-slate-800 dark:text-slate-100' },
+          { label:'אישרו הגעה',          val:metrics.rsvpYesCount,        cls:'text-emerald-600' },
           { label:'ממתינים',             val:metrics.pendingCount,        cls:'text-amber-600' },
-          { label:'התחייבות ×0.9',       val:metrics.safeVenueCommitment, cls:'text-indigo-700 dark:text-indigo-400' },
+          { label:'התחייבות ×0.9',       val:metrics.safeVenueCommitment, cls:'text-indigo-600 dark:text-indigo-400' },
         ].map(({ label, val, cls }) => (
-          <Card key={label} className="p-4 text-center">
+          <Card key={label} className="p-4 text-center shadow-sm">
             <div className={`text-2xl font-bold ${cls}`}>{val}</div>
-            <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{label}</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">{label}</div>
           </Card>
         ))}
       </div>
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
-        <strong>אומדן מתנות שמרני:</strong> משפחה / משפחה גרעינית / חברים קרובים = ₪500 · כללי / חברים / עבודה / חברים של ההורים = ₪350
+
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
+        <strong>💡 אומדן מתנות שמרני:</strong> משפחה קרובה = ₪500 · כללי / חברים = ₪350
       </div>
-      <div className="flex flex-wrap gap-3">
-        <div className="flex flex-wrap gap-1">
-          {['הכל', ...RSVP_STATUSES].map(s => <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s}</FilterPill>)}
+
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="w-full md:w-64 relative">
+          <input 
+            type="text" 
+            placeholder="חיפוש לפי שם אורח..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
         </div>
-        <div className="hidden sm:block w-px bg-gray-200 dark:bg-gray-600 self-stretch"></div>
-        <div className="flex flex-wrap gap-1">
-          {['הכל', ...GUEST_SIDES].map(s => <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s}</FilterPill>)}
-        </div>
-        <div className="hidden sm:block w-px bg-gray-200 dark:bg-gray-600 self-stretch"></div>
-        <div className="flex flex-wrap gap-1">
-          {['הכל', ...GUEST_GROUPS].map(s => <FilterPill key={s} active={groupFilter === s} color="indigo" onClick={() => setGroupFilter(s)}>{s}</FilterPill>)}
+        
+        <div className="flex flex-wrap gap-x-4 gap-y-2 w-full md:w-auto">
+          <div className="flex flex-wrap gap-1">
+            {['הכל', ...RSVP_STATUSES].map(s => <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s}</FilterPill>)}
+          </div>
+          <div className="hidden sm:block w-px bg-slate-200 dark:bg-slate-700 self-stretch"></div>
+          <div className="flex flex-wrap gap-1">
+            {['הכל', ...GUEST_SIDES].map(s => <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s}</FilterPill>)}
+          </div>
         </div>
       </div>
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
+
+      <Card className="overflow-hidden shadow-sm">
+        {/* Mobile View: Cards */}
+        <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-700">
+          {filtered.map(g => (
+            <div key={g.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100">{g.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-slate-500">{g.group} • {g.side}</span>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
+              </div>
+              <div className="flex justify-between items-center mt-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
+                <div className="flex flex-col"><span className="text-[10px] text-slate-500">מוערכת</span><span className="font-semibold text-indigo-600 dark:text-indigo-400 text-sm">{fmt(g.estimated_gift)}</span></div>
+                <div className="flex flex-col items-center"><span className="text-[10px] text-slate-500">בפועל</span><span className="font-semibold text-emerald-600 text-sm">{num(g.actual_gift) > 0 ? fmt(g.actual_gift) : '—'}</span></div>
+                <div className="flex gap-1">
+                  <button onClick={() => setModal(g)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✎</button>
+                  <button onClick={() => { if(window.confirm('להסיר אורח זה?')) deleteGuest(g.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-slate-400 text-sm">אין אורחים התואמים את הסינון</div>
+          )}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600 text-[11px] uppercase tracking-widest text-gray-400">
+              <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 text-[11px] uppercase tracking-widest text-slate-500">
                 <th className="text-right px-4 py-3 font-semibold">שם</th>
                 <th className="text-right px-4 py-3 font-semibold">קבוצה</th>
                 <th className="text-right px-4 py-3 font-semibold">צד</th>
@@ -700,18 +850,18 @@ function Guests() {
                 <th className="text-center px-4 py-3 font-semibold w-28">פעולות</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {filtered.map(g => (
-                <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{g.name}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{g.group}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{g.side}</td>
+                <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{g.name}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{g.group}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{g.side}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-indigo-600 dark:text-indigo-400">{fmt(g.estimated_gift)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-600">
-                    {num(g.actual_gift) > 0 ? fmt(g.actual_gift) : <span className="text-gray-300 font-normal">—</span>}
+                  <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                    {num(g.actual_gift) > 0 ? fmt(g.actual_gift) : <span className="text-slate-300 font-normal">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
@@ -722,20 +872,20 @@ function Guests() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-300 text-sm">אין אורחים התואמים את הסינון הנוכחי</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 text-sm border-dashed border-2 m-4 bg-transparent">לא נמצאו אורחים מתאימים</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 px-4 py-4 space-y-1.5">
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+        <div className="border-t-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 px-4 py-4 space-y-1.5">
+          <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
             <span>סה״כ מתנות צפויות (מגיעים + ממתינים)</span>
-            <span className="font-bold text-indigo-700 dark:text-indigo-400">{fmt(metrics.totalExpectedGifts)}</span>
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">{fmt(metrics.totalExpectedGifts)}</span>
           </div>
           {totalActual > 0 && (
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
               <span>סה״כ מתנות שהתקבלו בפועל</span>
-              <span className="font-bold text-green-700 dark:text-green-400">{fmt(totalActual)}</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(totalActual)}</span>
             </div>
           )}
         </div>
@@ -770,55 +920,78 @@ function Checklist() {
   const { tasks, addTask, toggleTask, updateTask, deleteTask } = useApp();
   const [modal, setModal]         = useState(null);
   const [catFilter, setCatFilter] = useState('הכל');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const handleSave = (data) => { if (modal === 'new') addTask(data); else updateTask(modal.id, data); setModal(null); };
-  const filtered   = catFilter === 'הכל' ? tasks : tasks.filter(t => t.category === catFilter);
+  
+  const filtered = tasks.filter(t => 
+    (catFilter === 'הכל' || t.category === catFilter) &&
+    (t.text.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   const done = tasks.filter(t => t.done).length;
+  
   return (
     <div className="space-y-6">
       {modal && <TaskModal task={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <div className="flex items-center justify-between">
+      
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">רשימת מטלות</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{done} / {tasks.length} הושלמו</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">רשימת מטלות</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{done} / {tasks.length} הושלמו</p>
         </div>
         <Btn onClick={() => setModal('new')}>+ הוסף משימה</Btn>
       </div>
+
       {tasks.length > 0 && (
-        <Card className="p-4">
+        <Card className="p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">התקדמות כללית</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">התקדמות כללית</span>
             <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{Math.round(done/tasks.length*100)}%</span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div className="bg-indigo-600 h-2 rounded-full transition-all" style={{ width: `${done/tasks.length*100}%` }}></div>
+          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${done/tasks.length*100}%` }}></div>
           </div>
         </Card>
       )}
-      <div className="flex flex-wrap gap-1">
-        {['הכל', ...CHECKLIST_CATS].map(c => <FilterPill key={c} active={catFilter === c} color="indigo" onClick={() => setCatFilter(c)}>{c}</FilterPill>)}
+
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="w-full md:w-64 relative">
+          <input 
+            type="text" 
+            placeholder="חיפוש משימה..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {['הכל', ...CHECKLIST_CATS].map(c => <FilterPill key={c} active={catFilter === c} color="indigo" onClick={() => setCatFilter(c)}>{c}</FilterPill>)}
+        </div>
       </div>
+
       {filtered.length === 0 ? (
-        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין משימות</p><p className="text-sm mt-1">לחץ "+ הוסף משימה" כדי להתחיל</p></Card>
+        <Card className="p-12 text-center text-slate-400 border-dashed border-2 bg-transparent"><p className="text-lg font-medium">אין משימות</p><p className="text-sm mt-1">נסה חיפוש אחר או הוסף משימה חדשה</p></Card>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filtered.map(t => (
-            <Card key={t.id} className={`p-4 flex items-center gap-3 transition-opacity ${t.done ? 'opacity-60' : ''}`}>
+            <Card key={t.id} className={`p-4 flex items-center gap-4 transition-all duration-300 ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md'}`}>
               <button onClick={() => toggleTask(t.id)}
-                className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                  t.done ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 dark:border-gray-500 hover:border-indigo-400'
+                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'
                 }`}>
                 {t.done && <span className="text-white text-xs font-bold leading-none">✓</span>}
               </button>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${t.done ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>{t.text}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{t.category}</span>
-                  {t.due_date && <span className="text-[11px] text-gray-400">📅 {t.due_date}</span>}
+                <p className={`text-sm font-medium text-slate-900 dark:text-slate-100 ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{t.text}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{t.category}</span>
+                  {t.due_date && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">📅 {t.due_date}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Btn variant="ghost" size="sm" onClick={() => setModal(t)}>ערוך</Btn>
-                <Btn variant="danger" size="sm" onClick={() => { if(window.confirm('למחוק משימה זו?')) deleteTask(t.id); }}>✕</Btn>
+                <button onClick={() => setModal(t)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
+                <button onClick={() => { if(window.confirm('למחוק משימה זו?')) deleteTask(t.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
               </div>
             </Card>
           ))}
@@ -866,62 +1039,89 @@ function Vendors() {
   const { vendors, addVendor, updateVendor, deleteVendor } = useApp();
   const [modal, setModal]             = useState(null);
   const [statusFilter, setStatusFilter] = useState('הכל');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const handleSave = (data) => { if (modal === 'new') addVendor(data); else updateVendor(modal.id, data); setModal(null); };
-  const filtered      = statusFilter === 'הכל' ? vendors : vendors.filter(v => v.status === statusFilter);
+  
+  const filtered = vendors.filter(v => 
+    (statusFilter === 'הכל' || v.status === statusFilter) &&
+    (v.name.toLowerCase().includes(searchQuery.toLowerCase()) || v.category.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+  
   const totalContract = vendors.reduce((s, v) => s + num(v.contract_amount), 0);
   const totalPaid     = vendors.reduce((s, v) => s + num(v.paid_amount), 0);
+  
   return (
     <div className="space-y-6">
       {modal && <VendorModal vendor={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ניהול ספקים</h2>
+      
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">ניהול ספקים</h2>
         <Btn onClick={() => setModal('new')}>+ הוסף ספק</Btn>
       </div>
+
       <div className="grid grid-cols-3 gap-4">
         <KpiCard title="סה״כ חוזים"    value={fmt(totalContract)}           color="indigo" />
         <KpiCard title="שולם לספקים"   value={fmt(totalPaid)}               color="green" />
         <KpiCard title="יתרה לספקים"   value={fmt(totalContract-totalPaid)} color="amber" />
       </div>
-      <div className="flex flex-wrap gap-1">
-        {['הכל', ...VENDOR_STATUSES].map(s => <FilterPill key={s} active={statusFilter === s} color="indigo" onClick={() => setStatusFilter(s)}>{s}</FilterPill>)}
+
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="w-full md:w-64 relative">
+          <input 
+            type="text" 
+            placeholder="חיפוש ספק או קטגוריה..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {['הכל', ...VENDOR_STATUSES].map(s => <FilterPill key={s} active={statusFilter === s} color="indigo" onClick={() => setStatusFilter(s)}>{s}</FilterPill>)}
+        </div>
       </div>
+
       {filtered.length === 0 ? (
-        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין ספקים</p><p className="text-sm mt-1">לחץ "+ הוסף ספק" כדי להתחיל</p></Card>
+        <Card className="p-12 text-center text-slate-400 border-dashed border-2 bg-transparent"><p className="text-lg font-medium">אין ספקים</p><p className="text-sm mt-1">נסה חיפוש אחר או הוסף ספק חדש</p></Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(v => {
             const remaining = num(v.contract_amount) - num(v.paid_amount);
             const pct = v.contract_amount > 0 ? Math.min(100, num(v.paid_amount)/num(v.contract_amount)*100) : 0;
             return (
-              <Card key={v.id} className="p-5">
+              <Card key={v.id} className="p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base">{v.name}</h3>
-                      <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${VENDOR_BADGE[v.status]}`}>{v.status}</span>
+                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">{v.name}</h3>
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${VENDOR_BADGE[v.status]}`}>{v.status}</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{v.category}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{v.category}</p>
                     {(v.contact_name || v.phone) && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {v.contact_name}{v.contact_name && v.phone && ' · '}<span dir="ltr">{v.phone}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 inline-block px-2 py-1 rounded">
+                        <span>👤 {v.contact_name}</span>
+                        {v.contact_name && v.phone && <span className="text-slate-300">|</span>}
+                        {v.phone && <span dir="ltr">📞 {v.phone}</span>}
                       </p>
                     )}
-                    {v.notes && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">{v.notes}</p>}
+                    {v.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">{v.notes}</p>}
+                    
                     {v.contract_amount > 0 && (
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-500 dark:text-gray-400">שולם {fmt(num(v.paid_amount))} מתוך {fmt(num(v.contract_amount))}</span>
+                      <div className="mt-4">
+                        <div className="flex justify-between text-[11px] mb-1.5">
+                          <span className="text-slate-500 dark:text-slate-400">שולם <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(num(v.paid_amount))}</span> מתוך {fmt(num(v.contract_amount))}</span>
                           <span className="text-amber-600 font-semibold">נותר: {fmt(remaining)}</span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                          <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${pct}%` }}></div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                          <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${pct}%` }}></div>
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Btn variant="ghost" size="sm" onClick={() => setModal(v)}>ערוך</Btn>
-                    <Btn variant="danger" size="sm" onClick={() => { if(window.confirm('למחוק ספק זה?')) deleteVendor(v.id); }}>✕</Btn>
+                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                    <button onClick={() => setModal(v)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
+                    <button onClick={() => { if(window.confirm('למחוק ספק זה?')) deleteVendor(v.id); }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
                   </div>
                 </div>
               </Card>
@@ -1075,33 +1275,33 @@ function App() {
   return (
     <DarkProvider>
       <AppProvider>
-        <div className="min-h-screen bg-slate-100 dark:bg-gray-900 transition-colors">
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0 font-sans">
+          <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
             <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">💍 מנהל כספים ואורחים לחתונה</h1>
-                <p className="text-xs text-gray-400 mt-0.5">מודל חתונה ישראלי · נטען ונשמר אוטומטית ב-wedding-data.json</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent">💍 Wedding Planner</h1>
+                <p className="text-xs text-slate-400 mt-0.5">מנהל כספים ואורחים · שומר אוטומטית</p>
               </div>
               <HeaderButtons />
             </div>
-          </header>
-          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20 shadow-sm">
-            <div className="max-w-6xl mx-auto px-4">
-              <nav className="flex overflow-x-auto">
+            {/* Desktop Navigation */}
+            <div className="hidden md:block max-w-6xl mx-auto px-4">
+              <nav className="flex overflow-x-auto no-scrollbar">
                 {TABS.map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)}
-                    className={`flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
                       tab === t.id
-                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300'
+                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
                     }`}>
-                    <span>{t.icon}</span><span>{t.label}</span>
+                    <span className="text-lg">{t.icon}</span><span>{t.label}</span>
                   </button>
                 ))}
               </nav>
             </div>
-          </div>
-          <main className="max-w-6xl mx-auto px-4 py-8">
+          </header>
+
+          <main className="max-w-6xl mx-auto px-4 py-8 animate-fade-in-up">
             {tab === 'dashboard' && <Dashboard />}
             {tab === 'expenses'  && <Expenses />}
             {tab === 'guests'    && <Guests />}
@@ -1109,6 +1309,21 @@ function App() {
             {tab === 'vendors'   && <Vendors />}
             {tab === 'seating'   && <Seating />}
           </main>
+
+          {/* Mobile Bottom Navigation */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-40 px-2 py-2 flex justify-around items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
+                  tab === t.id
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}>
+                <span className="text-xl mb-1">{t.icon}</span>
+                <span className="text-[10px] font-semibold">{t.label}</span>
+              </button>
+            ))}
+          </nav>
         </div>
       </AppProvider>
     </DarkProvider>
