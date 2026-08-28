@@ -130,7 +130,7 @@ async function persistWeddingData(state) {
 // ── Dark mode context ──────────────────────────────────────────────────────
 const DarkCtx = createContext(null);
 function DarkProvider({ children }) {
-  const [dark, setDark] = useState(() => load('wfgm_dark', false));
+  const [dark, setDark] = useState(() => load('wfgm_dark', true));
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('wfgm_dark', JSON.stringify(dark));
