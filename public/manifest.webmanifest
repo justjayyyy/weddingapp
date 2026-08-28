@@ -1,14 +1,14 @@
 {
-  "name": "Wedding Planner",
-  "short_name": "Wedding Planner",
-  "description": "תכנון החתונה של דניאל ותמר האהובים",
+  "name": "Daniel and Tamar Wedding Planner",
+  "short_name": "Daniel & Tamar",
+  "description": "Daniel and Tamar Wedding Planner",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "/window.svg",
+      "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

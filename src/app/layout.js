@@ -8,13 +8,13 @@ const assistant = Assistant({
 });
 
 export const metadata = {
-  title: "Wedding Planner",
-  description: "Premium Wedding Management App",
+  title: "Daniel and Tamar Wedding Planner",
+  description: "Daniel and Tamar Wedding Planner",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Wedding Planner",
+    title: "Daniel and Tamar Wedding Planner",
   },
 };
 
