@@ -980,6 +980,7 @@ function Guests() {
   const [rsvpFilter, setRsvpFilter] = useState('הכל');
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
+  const [phoneFilter, setPhoneFilter] = useState('הכל');
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
 
@@ -987,6 +988,7 @@ function Guests() {
     (rsvpFilter === 'הכל' || g.rsvp_status === rsvpFilter) &&
     (sideFilter === 'הכל' || g.side === sideFilter) &&
     (groupFilter === 'הכל' || g.group === groupFilter) &&
+    (phoneFilter === 'הכל' || (phoneFilter === 'יש טלפון' ? g.phone && g.phone.trim() !== '' : !g.phone || g.phone.trim() === '')) &&
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
      (g.phone && g.phone.includes(searchQuery)))
   );
@@ -1069,6 +1071,10 @@ function Guests() {
           <div className="hidden sm:block w-px bg-slate-200 dark:bg-slate-700 self-stretch"></div>
           <div className="flex flex-wrap gap-1">
             {['הכל', ...GUEST_SIDES].map(s => <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s}</FilterPill>)}
+          </div>
+          <div className="hidden lg:block w-px bg-slate-200 dark:bg-slate-700 self-stretch"></div>
+          <div className="flex flex-wrap gap-1">
+            {['הכל', 'יש טלפון', 'חסר טלפון'].map(s => <FilterPill key={s} active={phoneFilter === s} color="blue" onClick={() => setPhoneFilter(s)}>{s}</FilterPill>)}
           </div>
         </div>
       </div>
