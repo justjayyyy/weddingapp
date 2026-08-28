@@ -475,7 +475,7 @@ function HeroSection() {
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
         <div className="text-center md:text-right space-y-3">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
-            המסע לחופה מתחיל ✨
+            המסע לחופה מתחיל
           </h2>
           {!WEDDING_DATE ? (
             <p className="text-indigo-100 text-lg md:text-xl font-medium bg-white/10 backdrop-blur-sm inline-block px-4 py-1.5 rounded-full border border-white/20">
@@ -565,7 +565,6 @@ function Dashboard() {
 
         {/* Expenses Summary */}
         <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 text-xl shadow-inner">💸</div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ הוצאות</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpensesWithBuffer)}</h3>
           <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
@@ -576,7 +575,6 @@ function Dashboard() {
 
         {/* Gifts Summary */}
         <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-4 text-emerald-600 text-xl shadow-inner">🎁</div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">מתנות צפויות</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpectedGifts)}</h3>
           <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
@@ -589,7 +587,6 @@ function Dashboard() {
         <div className="col-span-1 md:col-span-2 xl:col-span-2 rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 text-xl shadow-inner">👥</div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100">סטטוס מוזמנים</h3>
             </div>
             <div className="text-right">
@@ -616,7 +613,6 @@ function Dashboard() {
 
         {/* Break Even Point */}
         <div className="rounded-3xl p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-sm border border-blue-100 dark:border-blue-800/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <div className="w-10 h-10 rounded-xl bg-white/60 dark:bg-black/20 flex items-center justify-center mb-4 text-blue-600 text-xl shadow-sm backdrop-blur-sm">⚖️</div>
           <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold mb-1">נקודת איזון לאורח</p>
           <h3 className="text-3xl font-bold text-blue-800 dark:text-blue-200">{fmt(Math.round(bepPerGuest))}</h3>
           <p className="text-[10px] text-blue-600/70 dark:text-blue-300/70 mt-2 font-medium">עלות המנה הנדרשת לכיסוי</p>
@@ -630,14 +626,12 @@ function Dashboard() {
                 <p className="text-[10px] text-slate-400 font-semibold uppercase">שולם מראש</p>
                 <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{fmt(totalOutOfPocket)}</p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 text-xs">💳</div>
             </div>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-[10px] text-amber-500 font-semibold uppercase">יתרה לתשלום</p>
                 <p className="text-lg font-bold text-amber-600">{fmt(totalBalanceDue)}</p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 text-xs">⏳</div>
             </div>
           </div>
         </div>
@@ -648,7 +642,6 @@ function Dashboard() {
         <div className="rounded-3xl p-5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">✅</span>
               <span className="text-sm font-bold text-slate-800 dark:text-slate-200">התקדמות מטלות</span>
             </div>
             <span className="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full">{tasksDone}/{tasksTotal} מוכנים</span>
@@ -664,14 +657,12 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-xl">📊</span>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">פירוט הוצאות</h3>
           </div>
           <DonutChart data={expensesByCategory} />
         </div>
         <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-xl">📈</span>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">מאזן הוצאות מול מתנות</h3>
           </div>
           <BarChart items={barItems} />
@@ -1361,12 +1352,12 @@ function Seating() {
 
 // ── App shell ──────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'dashboard', label: 'לוח בקרה', icon: '📊' },
-  { id: 'expenses',  label: 'הוצאות',   icon: '💳' },
-  { id: 'guests',    label: 'אורחים',   icon: '👥' },
-  { id: 'checklist', label: 'מטלות',    icon: '✅' },
-  { id: 'vendors',   label: 'ספקים',    icon: '🤝' },
-  { id: 'seating',   label: 'ישיבה',    icon: '🪑' },
+  { id: 'dashboard', label: 'לוח בקרה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> },
+  { id: 'expenses',  label: 'הוצאות',   icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> },
+  { id: 'guests',    label: 'אורחים',   icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { id: 'checklist', label: 'מטלות',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
+  { id: 'vendors',   label: 'ספקים',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
+  { id: 'seating',   label: 'ישיבה',    icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M5 5l1.5 1.5"/><path d="M17.5 17.5L19 19"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M5 19l1.5-1.5"/><path d="M17.5 6.5L19 5"/></svg> },
 ];
 
 function HeaderButtons() {
@@ -1381,8 +1372,8 @@ function HeaderButtons() {
     <div className="flex items-center gap-2 flex-shrink-0">
       {pill && <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full ${pill.cls}`}>{pill.text}</span>}
       <button onClick={toggle} title={dark ? 'מצב בהיר' : 'מצב כהה'}
-        className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 text-base leading-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-        {dark ? '☀️' : '🌙'}
+        className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-medium leading-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        {dark ? 'מצב בהיר' : 'מצב כהה'}
       </button>
     </div>
   );
@@ -1397,7 +1388,7 @@ function App() {
           <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
             <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent">💍 Wedding Planner</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-rose-500 to-indigo-600 bg-clip-text text-transparent">Wedding Planner</h1>
                 <p className="text-xs text-slate-400 mt-0.5">תכנון החתונה של דניאל ותמר האהובים</p>
               </div>
               <HeaderButtons />
@@ -1407,12 +1398,12 @@ function App() {
               <nav className="flex overflow-x-auto no-scrollbar">
                 {TABS.map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)}
-                    className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+                    className={`flex items-center gap-2.5 px-5 py-4 text-[13px] font-semibold border-b-2 transition-all whitespace-nowrap ${
                       tab === t.id
                         ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
                         : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
                     }`}>
-                    <span className="text-lg">{t.icon}</span><span>{t.label}</span>
+                    <span className="opacity-90">{t.icon}</span><span>{t.label}</span>
                   </button>
                 ))}
               </nav>
@@ -1429,16 +1420,16 @@ function App() {
           </main>
 
           {/* Mobile Bottom Navigation */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 z-40 px-2 py-2 flex justify-around items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-700/50 z-40 px-2 py-2 flex justify-around items-center shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-safe">
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
                   tab === t.id
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
+                    ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                 }`}>
-                <span className="text-xl mb-1">{t.icon}</span>
-                <span className="text-[10px] font-semibold">{t.label}</span>
+                <span className={`mb-1 transition-transform duration-300 ${tab === t.id ? 'scale-110 drop-shadow-sm' : ''}`}>{t.icon}</span>
+                <span className={`text-[10px] transition-all duration-300 ${tab === t.id ? 'font-bold' : 'font-medium'}`}>{t.label}</span>
               </button>
             ))}
           </nav>
