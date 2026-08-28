@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const GROUP_GIFT_DEFAULTS = {
@@ -1157,7 +1158,16 @@ function Checklist() {
   const [modal, setModal] = useState(null);
   const [catFilter, setCatFilter] = useState('הכל');
   const [searchQuery, setSearchQuery] = useState('');
-  const [dragId, setDragId] = useState(null);
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+    
+    // We map the visual index back to the actual item id
+    const srcId = filtered[result.source.index].id;
+    const tgtId = filtered[result.destination.index].id;
+    reorderTasks(srcId, tgtId);
+  };
 
   const handleSave = (data) => { if (modal === 'new') addTask(data); else updateTask(modal.id, data); setModal(null); };
 
@@ -1210,43 +1220,61 @@ function Checklist() {
       {filtered.length === 0 ? (
         <Card className="p-12 text-center text-slate-400 border-dashed border-2 bg-transparent"><p className="text-lg font-medium">אין משימות</p><p className="text-sm mt-1">נסה חיפוש אחר או הוסף משימה חדשה</p></Card>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((t, idx) => (
-            <Card 
-              key={t.id} 
-              draggable
-              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragId(t.id); }}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-              onDrop={(e) => { e.preventDefault(); if (dragId && dragId !== t.id) reorderTasks(dragId, t.id); setDragId(null); }}
-              className={`p-4 flex items-center gap-4 transition-all duration-300 cursor-grab active:cursor-grabbing ${dragId === t.id ? 'opacity-50' : ''} ${t.done ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md'}`}
-            >
-              <div className="text-slate-300 dark:text-slate-600 cursor-grab active:cursor-grabbing flex-shrink-0">
-                <svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor">
-                  <circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
-                  <circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/>
-                  <circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/>
-                </svg>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="tasks-list">
+            {(provided) => (
+              <div 
+                className="space-y-3"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {filtered.map((t, idx) => (
+                  <Draggable key={t.id} draggableId={t.id} index={idx}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        style={{ ...provided.draggableProps.style }}
+                      >
+                        <Card 
+                          className={`p-4 flex items-center gap-4 transition-all duration-300 ${snapshot.isDragging ? 'shadow-xl ring-2 ring-indigo-500 scale-[1.02] z-50 opacity-100' : 'hover:shadow-md'} ${t.done && !snapshot.isDragging ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : ''}`}
+                        >
+                          <div 
+                            className="text-slate-300 hover:text-indigo-500 dark:text-slate-600 cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors p-1"
+                            {...provided.dragHandleProps}
+                          >
+                            <svg width="16" height="24" viewBox="0 0 16 24" fill="currentColor">
+                              <circle cx="6" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
+                              <circle cx="6" cy="12" r="1.5"/><circle cx="10" cy="12" r="1.5"/>
+                              <circle cx="6" cy="18" r="1.5"/><circle cx="10" cy="18" r="1.5"/>
+                            </svg>
+                          </div>
+                          <button onClick={() => toggleTask(t.id)}
+                            className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'}`}>
+                            {t.done && <span className="text-white text-xs font-bold leading-none">✓</span>}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium text-slate-900 dark:text-slate-100 ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{t.text}</p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{t.category}</span>
+                              {t.due_date && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">📅 {t.due_date}</span>}
+                              <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-sm ${URGENCY_COLORS[t.urgency || 'רגילה']}`} title={`דחיפות: ${t.urgency || 'רגילה'}`}></span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button onClick={() => setModal(t)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
+                            <button onClick={() => { confirm('למחוק משימה זו?').then(yes => { if (yes) deleteTask(t.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-              <button onClick={() => toggleTask(t.id)}
-                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${t.done ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-500 hover:border-indigo-400'
-                  }`}>
-                {t.done && <span className="text-white text-xs font-bold leading-none">✓</span>}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium text-slate-900 dark:text-slate-100 ${t.done ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{t.text}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{t.category}</span>
-                  {t.due_date && <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">📅 {t.due_date}</span>}
-                  <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-sm ${URGENCY_COLORS[t.urgency || 'רגילה']}`} title={`דחיפות: ${t.urgency || 'רגילה'}`}></span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={() => setModal(t)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800 rounded-md">✎</button>
-                <button onClick={() => { confirm('למחוק משימה זו?').then(yes => { if (yes) deleteTask(t.id); }) }} className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800 rounded-md">✕</button>
-              </div>
-            </Card>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
     </div>
   );
