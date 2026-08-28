@@ -529,14 +529,14 @@ function HeroSection() {
 
   return (
     <div 
-      className="relative overflow-hidden rounded-3xl p-8 sm:p-10 shadow-2xl group bg-cover bg-center transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
+      className="relative overflow-hidden rounded-3xl p-8 sm:p-12 min-h-[300px] sm:min-h-[400px] flex items-center shadow-2xl group bg-cover bg-[position:center_30%] transition-all duration-700 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]"
       style={{ backgroundImage: "url('/couple.jpg')" }}
     >
       {/* Elegant dark overlay to ensure text is always readable against any photo */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-slate-900/20"></div>
       <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply group-hover:bg-indigo-900/10 transition-colors duration-700"></div>
       
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
+      <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
         <div className="text-center md:text-right space-y-3">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
             המסע לחופה מתחיל
