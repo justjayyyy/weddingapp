@@ -159,6 +159,7 @@ function AppProvider({ children }) {
   const [vendors, setVendors] = useState([]);
   const [tables, setTables] = useState([]);
   const [ideas, setIdeas] = useState([]);
+  const [weddingDate, setWeddingDate] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
 
@@ -188,6 +189,7 @@ function AppProvider({ children }) {
         if (p.vendors) setVendors(p.vendors);
         if (p.tables) setTables(p.tables);
         if (p.ideas) setIdeas(p.ideas);
+        if (p.weddingDate) setWeddingDate(p.weddingDate);
         setLoadError(false);
       } catch {
         if (!cancelled) setLoadError(true);
@@ -209,7 +211,7 @@ function AppProvider({ children }) {
     setSaveStatus('saving');
     const t = setTimeout(async () => {
       try {
-        await persistWeddingData({ expenses, guests, tasks, vendors, tables, ideas });
+        await persistWeddingData({ expenses, guests, tasks, vendors, tables, ideas, weddingDate });
         if (gen !== saveGen.current) return;
         setSaveStatus('saved');
       } catch {
@@ -218,7 +220,7 @@ function AppProvider({ children }) {
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [expenses, guests, tasks, vendors, tables, ideas, ready, loadError]);
+  }, [expenses, guests, tasks, vendors, tables, ideas, weddingDate, ready, loadError]);
 
   const addExpense = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
   const updateExpense = (id, d) => { setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e)); addToast('הוצאה עודכנה'); };
@@ -325,7 +327,7 @@ function AppProvider({ children }) {
   }
 
   const value = {
-    expenses, guests, tasks, vendors, tables, ideas, metrics,
+    expenses, guests, tasks, vendors, tables, ideas, weddingDate, setWeddingDate, metrics,
     addExpense, updateExpense, deleteExpense,
     addGuest, addMultipleGuests, updateGuest, deleteGuest,
     addTask, toggleTask, updateTask, deleteTask, reorderTasks,
@@ -567,14 +569,17 @@ function FilterPill({ active, color = 'indigo', onClick, children }) {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 // ── Countdown Widget ───────────────────────────────────────────────────────
 function HeroSection() {
-  // If the date isn't set, this should be null.
-  const WEDDING_DATE = null;
+  const { weddingDate, setWeddingDate } = useApp();
+  const parsedDate = weddingDate ? new Date(weddingDate) : null;
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
-    if (!WEDDING_DATE) return;
+    if (!parsedDate) {
+      setTimeLeft(null);
+      return;
+    }
     const calc = () => {
-      const diff = WEDDING_DATE - new Date();
+      const diff = parsedDate - new Date();
       if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
       return {
         d: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -586,7 +591,7 @@ function HeroSection() {
     setTimeLeft(calc());
     const timer = setInterval(() => setTimeLeft(calc()), 1000);
     return () => clearInterval(timer);
-  }, [WEDDING_DATE]);
+  }, [weddingDate]);
 
   return (
     <div
@@ -602,22 +607,35 @@ function HeroSection() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
             המסע לחופה מתחיל
           </h2>
-          {!WEDDING_DATE ? (
+          {!parsedDate ? (
             <p className="text-indigo-100 text-lg md:text-xl font-medium bg-white/10 backdrop-blur-sm inline-block px-4 py-1.5 rounded-full border border-white/20">
               תאריך טרם נקבע
             </p>
           ) : (
-            <p className="text-indigo-100 text-lg md:text-xl font-medium drop-shadow-sm">
-              {WEDDING_DATE.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-indigo-100 text-lg md:text-xl font-medium drop-shadow-sm">
+                {parsedDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+              <div className="flex gap-2 relative z-20">
+                <label className="cursor-pointer p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded text-white transition-colors">
+                  <span className="sr-only">ערוך תאריך</span>
+                  ✎
+                  <input type="date" className="absolute opacity-0 w-0 h-0" onChange={(e) => setWeddingDate(e.target.value)} />
+                </label>
+                <button onClick={() => setWeddingDate(null)} className="p-1.5 bg-white/20 hover:bg-red-500/80 backdrop-blur-md rounded text-white transition-colors" title="מחק תאריך">
+                  ✕
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
-        {!WEDDING_DATE ? (
-          <div className="flex-shrink-0">
-            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        {!parsedDate ? (
+          <div className="flex-shrink-0 relative z-20">
+            <label className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block text-center">
               + קבעו תאריך
-            </button>
+              <input type="date" className="absolute opacity-0 w-full h-full left-0 top-0 cursor-pointer" onChange={(e) => setWeddingDate(e.target.value)} />
+            </label>
           </div>
         ) : (
           timeLeft && (
