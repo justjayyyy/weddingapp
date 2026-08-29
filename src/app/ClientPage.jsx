@@ -994,6 +994,11 @@ function Guests() {
   }, []);
 
   const handleImportContacts = async () => {
+    if (!contactsSupported) {
+      addToast('ייבוא מאנשי קשר נתמך כרגע רק במכשירי אנדרואיד, בגלל הגבלות פרטיות של Apple.', 'error');
+      return;
+    }
+
     try {
       const props = ['name', 'tel'];
       const opts = { multiple: true };
@@ -1072,11 +1077,9 @@ function Guests() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">אורחים ואומדן מתנות</h2>
         <div className="flex gap-2">
-          {contactsSupported && (
-            <button onClick={handleImportContacts} className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
-              📱 ייבא מאנשי קשר
-            </button>
-          )}
+          <button onClick={handleImportContacts} className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+            📱 ייבא מאנשי קשר
+          </button>
           <button onClick={exportExcel} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             ייצא Excel
