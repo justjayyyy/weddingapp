@@ -985,6 +985,7 @@ function Guests() {
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
   const [phoneFilter, setPhoneFilter] = useState('הכל');
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
 
@@ -1058,22 +1059,31 @@ function Guests() {
 
       <div className="flex flex-col gap-4 bg-white dark:bg-slate-800 p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="w-full md:w-72 relative">
-            <input
-              type="text"
-              placeholder="חיפוש לפי שם אורח או טלפון..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-            />
-            <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+          <div className="flex w-full md:w-auto gap-2">
+            <div className="w-full md:w-72 relative">
+              <input
+                type="text"
+                placeholder="חיפוש לפי שם אורח או טלפון..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              />
+              <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+            </div>
+            <button 
+              onClick={() => setShowFiltersMobile(!showFiltersMobile)}
+              className="md:hidden px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700 font-medium text-xs transition-colors whitespace-nowrap"
+            >
+              {showFiltersMobile ? 'הסתר סינון' : 'סינון מתקדם'}
+            </button>
           </div>
           <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
             מציג <span className="text-indigo-600 dark:text-indigo-400">{filtered.length}</span> מתוך {guests.length} אורחים
           </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-5 xl:gap-6">
+        <div className={`${showFiltersMobile ? 'flex' : 'hidden'} md:flex flex-col gap-4`}>
+          <div className="flex flex-col xl:flex-row gap-5 xl:gap-6">
           {/* Status Filter */}
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">סטטוס הגעה</span>
@@ -1125,6 +1135,8 @@ function Guests() {
               return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
             })}
           </div>
+          </div>
+        </div>
         </div>
       </div>
 
