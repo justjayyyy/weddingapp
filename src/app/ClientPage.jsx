@@ -1135,10 +1135,9 @@ function Guests() {
               return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
             })}
           </div>
-          </div>
-        </div>
         </div>
       </div>
+    </div>
 
       <Card className="overflow-hidden shadow-sm">
         {/* Mobile View: Cards */}
