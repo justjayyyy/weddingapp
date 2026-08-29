@@ -572,6 +572,19 @@ function HeroSection() {
   const { weddingDate, setWeddingDate } = useApp();
   const parsedDate = weddingDate ? new Date(weddingDate) : null;
   const [timeLeft, setTimeLeft] = useState(null);
+  const dateInputRef = useRef(null);
+
+  const handleDateClick = () => {
+    try {
+      if (dateInputRef.current && 'showPicker' in HTMLInputElement.prototype) {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current?.focus();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (!parsedDate) {
@@ -617,11 +630,10 @@ function HeroSection() {
                 {parsedDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
               <div className="flex gap-2 relative z-20">
-                <label className="cursor-pointer p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded text-white transition-colors">
-                  <span className="sr-only">ערוך תאריך</span>
+                <button onClick={handleDateClick} className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded text-white transition-colors" title="ערוך תאריך">
                   ✎
-                  <input type="date" className="absolute opacity-0 w-0 h-0" onChange={(e) => setWeddingDate(e.target.value)} />
-                </label>
+                </button>
+                <input type="date" ref={dateInputRef} className="sr-only" onChange={(e) => setWeddingDate(e.target.value)} />
                 <button onClick={() => setWeddingDate(null)} className="p-1.5 bg-white/20 hover:bg-red-500/80 backdrop-blur-md rounded text-white transition-colors" title="מחק תאריך">
                   ✕
                 </button>
@@ -632,10 +644,10 @@ function HeroSection() {
 
         {!parsedDate ? (
           <div className="flex-shrink-0 relative z-20">
-            <label className="cursor-pointer bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block text-center">
+            <button onClick={handleDateClick} className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block text-center">
               + קבעו תאריך
-              <input type="date" className="absolute opacity-0 w-full h-full left-0 top-0 cursor-pointer" onChange={(e) => setWeddingDate(e.target.value)} />
-            </label>
+            </button>
+            <input type="date" ref={dateInputRef} className="sr-only" onChange={(e) => setWeddingDate(e.target.value)} />
           </div>
         ) : (
           timeLeft && (
