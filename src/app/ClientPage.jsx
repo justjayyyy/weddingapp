@@ -38,9 +38,10 @@ const URGENCY_COLORS = {
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+let PRIVACY_MODE = true;
 const uid = () => Math.random().toString(36).slice(2, 10);
 const num = (v) => Number(v) || 0;
-const fmt = (n) => '₪' + num(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmt = (n) => PRIVACY_MODE ? '₪ •••' : '₪' + num(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const load = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 
 // ── Seed data ──────────────────────────────────────────────────────────────
@@ -162,6 +163,22 @@ function AppProvider({ children }) {
   const [weddingDate, setWeddingDate] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
+  const [privacyMode, setPrivacyModeState] = useState(true);
+
+  useEffect(() => {
+    const saved = load('wfgm_privacy', true);
+    if (saved !== true) {
+      PRIVACY_MODE = saved;
+      setPrivacyModeState(saved);
+    }
+  }, []);
+
+  const togglePrivacyMode = () => {
+    const newVal = !privacyMode;
+    PRIVACY_MODE = newVal;
+    setPrivacyModeState(newVal);
+    localStorage.setItem('wfgm_privacy', JSON.stringify(newVal));
+  };
 
   const confirmDialog = (msg) => new Promise(resolve => setConfirmState({ msg, resolve }));
   const handleConfirm = (res) => { if (confirmState) { confirmState.resolve(res); setConfirmState(null); } };
@@ -328,6 +345,7 @@ function AppProvider({ children }) {
 
   const value = {
     expenses, guests, tasks, vendors, tables, ideas, weddingDate, setWeddingDate, metrics,
+    privacyMode, togglePrivacyMode,
     addExpense, updateExpense, deleteExpense,
     addGuest, addMultipleGuests, updateGuest, deleteGuest,
     addTask, toggleTask, updateTask, deleteTask, reorderTasks,
@@ -1826,7 +1844,7 @@ const TABS = [
 ];
 
 function HeaderButtons() {
-  const { saveStatus } = useApp();
+  const { saveStatus, privacyMode, togglePrivacyMode } = useApp();
   const { dark, toggle } = useDark();
   const pill = saveStatus === 'saving'
     ? { text: 'שומר…', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }
@@ -1836,6 +1854,10 @@ function HeaderButtons() {
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
       {pill && <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full ${pill.cls}`}>{pill.text}</span>}
+      <button onClick={togglePrivacyMode} title={privacyMode ? 'הצג סכומים' : 'הסתר סכומים'}
+        className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-medium leading-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        {privacyMode ? '👀' : '🙈'}
+      </button>
       <button onClick={toggle} title={dark ? 'מצב בהיר' : 'מצב כהה'}
         className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-medium leading-none hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
         {dark ? 'מצב בהיר' : 'מצב כהה'}
