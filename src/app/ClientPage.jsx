@@ -1654,29 +1654,88 @@ function Seating() {
 }
 
 // ── Ideas ────────────────────────────────────────────────────────────────
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 function IdeaModal({ idea, onSave, onClose }) {
   const { addToast } = useApp();
+  const [imgData, setImgData] = useState(idea?.image || null);
+  const [isCompressing, setIsCompressing] = useState(false);
+
+  const handleImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      setImgData(compressed);
+    } catch (err) {
+      addToast('שגיאה בהעלאת התמונה', 'error');
+    }
+    setIsCompressing(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const text = fd.get('text').trim();
-    if (!text) return addToast('נא להזין טקסט', 'error');
-    onSave({ text, link: fd.get('link').trim() });
+    if (!text && !imgData) return addToast('נא להזין טקסט או להעלות תמונה', 'error');
+    onSave({ text, link: fd.get('link').trim(), image: imgData });
   };
   return (
     <Modal title={idea ? 'ערוך רעיון' : 'רעיון חדש'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">הרעיון שלך</label>
-          <textarea name="text" defaultValue={idea?.text} required rows={4} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="למשל: צלם מגנטים עם מסגרת עץ, שיר כניסה לחופה..."></textarea>
+          <textarea name="text" defaultValue={idea?.text} rows={4} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="למשל: צלם מגנטים עם מסגרת עץ, שיר כניסה לחופה..."></textarea>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">קישור (אופציונלי)</label>
           <input type="text" name="link" defaultValue={idea?.link} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="pinterest.com/..." />
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">תמונה (אופציונלי)</label>
+          <div className="flex flex-col gap-2">
+            <input type="file" accept="image/*" onChange={handleImage} className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-300" />
+            {isCompressing && <span className="text-xs text-slate-500 animate-pulse">מעבד תמונה...</span>}
+            {imgData && (
+              <div className="relative inline-block mt-2 self-start">
+                <img src={imgData} alt="Preview" className="h-32 w-auto object-cover rounded-lg border border-slate-200 dark:border-slate-700" />
+                <button type="button" onClick={() => setImgData(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 transition-colors">✕</button>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="flex gap-2 justify-end pt-2">
           <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
-          <Btn type="submit">{idea ? 'שמור' : 'הוסף'}</Btn>
+          <Btn type="submit" disabled={isCompressing}>{idea ? 'שמור' : 'הוסף'}</Btn>
         </div>
       </form>
     </Modal>
@@ -1723,6 +1782,11 @@ function Ideas() {
                </button>
              </div>
              <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap text-sm leading-relaxed mt-4 sm:mt-0">{idea.text}</p>
+             {idea.image && (
+               <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                 <img src={idea.image} alt="השראה" className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" />
+               </div>
+             )}
              {idea.link && (
                <a href={idea.link.match(/^https?:\/\//) ? idea.link : `https://${idea.link}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
                  <span>🔗</span> פתח קישור
