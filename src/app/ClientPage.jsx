@@ -14,7 +14,7 @@ const GROUP_GIFT_DEFAULTS = {
 };
 const EXPENSE_CATEGORIES = ['אולם וקייטרינג', 'ספקים מרכזיים', 'לבוש ויופי', 'טבעות ותוספות'];
 const GUEST_GROUPS = Object.keys(GROUP_GIFT_DEFAULTS);
-const GUEST_SIDES = ['כלה', 'חתן', 'משותף'];
+const GUEST_SIDES = ['כלה', 'חתן'];
 const RSVP_STATUSES = ['ממתין', 'מגיע', 'לא מגיע'];
 const VENDOR_STATUSES = ['ליצור קשר', 'בתהליך', 'חתום', 'שולם במלואו'];
 const VENDOR_CATEGORIES = [...EXPENSE_CATEGORIES, 'אחר'];
