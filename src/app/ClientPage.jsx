@@ -985,54 +985,6 @@ function Guests() {
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
   const [phoneFilter, setPhoneFilter] = useState('הכל');
-  const [contactsSupported, setContactsSupported] = useState(false);
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
-      setContactsSupported(true);
-    }
-  }, []);
-
-  const handleImportContacts = async () => {
-    if (!contactsSupported) {
-      addToast('ייבוא מאנשי קשר נתמך כרגע רק במכשירי אנדרואיד, בגלל הגבלות פרטיות של Apple.', 'error');
-      return;
-    }
-
-    try {
-      const props = ['name', 'tel'];
-      const opts = { multiple: true };
-      const contacts = await navigator.contacts.select(props, opts);
-      if (!contacts || contacts.length === 0) return;
-      
-      const toAdd = [];
-      for (const c of contacts) {
-        const name = c.name?.[0];
-        let phone = c.tel?.[0] || '';
-        if (!name) continue;
-        if (phone) phone = phone.replace(/[\s-]/g, '');
-        
-        toAdd.push({
-          name: name,
-          phone: phone,
-          party_size: 1,
-          group: 'כללי',
-          side: 'כלה',
-          rsvp_status: 'ממתין',
-          estimated_gift: GROUP_GIFT_DEFAULTS['כללי'],
-          actual_gift: 0,
-          arrival_probability: 100
-        });
-      }
-      if (toAdd.length > 0) {
-        addMultipleGuests(toAdd);
-      }
-    } catch (err) {
-      if (err.name !== 'NotAllowedError') {
-        addToast('שגיאה בייבוא אנשי קשר', 'error');
-      }
-    }
-  };
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
 
@@ -1077,9 +1029,6 @@ function Guests() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">אורחים ואומדן מתנות</h2>
         <div className="flex gap-2">
-          <button onClick={handleImportContacts} className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
-            📱 ייבא מאנשי קשר
-          </button>
           <button onClick={exportExcel} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             ייצא Excel
