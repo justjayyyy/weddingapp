@@ -1056,29 +1056,74 @@ function Guests() {
         <strong>💡 אומדן מתנות שמרני:</strong> משפחה קרובה = ₪500 · כללי / חברים = ₪350
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="w-full md:w-64 relative">
-          <input
-            type="text"
-            placeholder="חיפוש לפי שם אורח או טלפון..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+      <div className="flex flex-col gap-4 bg-white dark:bg-slate-800 p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="w-full md:w-72 relative">
+            <input
+              type="text"
+              placeholder="חיפוש לפי שם אורח או טלפון..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            />
+            <span className="absolute left-3 top-2.5 text-slate-400">🔍</span>
+          </div>
+          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
+            מציג <span className="text-indigo-600 dark:text-indigo-400">{filtered.length}</span> מתוך {guests.length} אורחים
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-2 w-full md:w-auto">
-          <div className="flex flex-wrap gap-1">
-            {['הכל', ...RSVP_STATUSES].map(s => <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s}</FilterPill>)}
+        <div className="flex flex-col xl:flex-row gap-5 xl:gap-6">
+          {/* Status Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">סטטוס הגעה</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', ...RSVP_STATUSES].map(s => {
+                const count = s === 'הכל' ? guests.length : guests.filter(g => g.rsvp_status === s).length;
+                return <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              })}
+            </div>
           </div>
-          <div className="hidden sm:block w-px bg-slate-200 dark:bg-slate-700 self-stretch"></div>
-          <div className="flex flex-wrap gap-1">
-            {['הכל', ...GUEST_SIDES].map(s => <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s}</FilterPill>)}
+          
+          <div className="hidden xl:block w-px bg-slate-100 dark:bg-slate-700/50"></div>
+
+          {/* Side Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">צד</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', ...GUEST_SIDES].map(s => {
+                const count = s === 'הכל' ? guests.length : guests.filter(g => g.side === s).length;
+                return <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              })}
+            </div>
           </div>
-          <div className="hidden lg:block w-px bg-slate-200 dark:bg-slate-700 self-stretch"></div>
-          <div className="flex flex-wrap gap-1">
-            {['הכל', 'יש טלפון', 'חסר טלפון'].map(s => <FilterPill key={s} active={phoneFilter === s} color="blue" onClick={() => setPhoneFilter(s)}>{s}</FilterPill>)}
+
+          <div className="hidden xl:block w-px bg-slate-100 dark:bg-slate-700/50"></div>
+
+          {/* Phone Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">טלפון</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', 'יש טלפון', 'חסר טלפון'].map(s => {
+                let count = guests.length;
+                if (s === 'יש טלפון') count = guests.filter(g => g.phone && g.phone.trim() !== '').length;
+                if (s === 'חסר טלפון') count = guests.filter(g => !g.phone || g.phone.trim() === '').length;
+                return <FilterPill key={s} active={phoneFilter === s} color="blue" onClick={() => setPhoneFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              })}
+            </div>
+          </div>
+        </div>
+
+        <hr className="border-slate-100 dark:border-slate-700/50 my-1" />
+
+        {/* Group Filter */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">קבוצה</span>
+          <div className="flex flex-wrap gap-1.5">
+            {['הכל', ...Array.from(new Set(guests.map(g => g.group).filter(Boolean)))].map(s => {
+              const count = s === 'הכל' ? guests.length : guests.filter(g => g.group === s).length;
+              return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+            })}
           </div>
         </div>
       </div>
