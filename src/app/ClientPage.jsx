@@ -998,6 +998,7 @@ function Guests() {
      (g.phone && g.phone.includes(searchQuery)))
   );
   const totalActual = guests.reduce((s, g) => s + num(g.actual_gift), 0);
+  const countHeads = (arr) => arr.reduce((acc, g) => acc + (parseInt(g.party_size) || 1), 0);
 
   const exportExcel = async () => {
     try {
@@ -1078,7 +1079,7 @@ function Guests() {
             </button>
           </div>
           <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
-            מציג <span className="text-indigo-600 dark:text-indigo-400">{filtered.length}</span> מתוך {guests.length} אורחים
+            מציג <span className="text-indigo-600 dark:text-indigo-400">{countHeads(filtered)}</span> מתוך {countHeads(guests)} מוזמנים
           </div>
         </div>
 
@@ -1089,7 +1090,7 @@ function Guests() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">סטטוס הגעה</span>
             <div className="flex flex-wrap gap-1.5">
               {['הכל', ...RSVP_STATUSES].map(s => {
-                const count = s === 'הכל' ? guests.length : guests.filter(g => g.rsvp_status === s).length;
+                const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => g.rsvp_status === s));
                 return <FilterPill key={s} active={rsvpFilter === s} color="indigo" onClick={() => setRsvpFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
               })}
             </div>
@@ -1102,7 +1103,7 @@ function Guests() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">צד</span>
             <div className="flex flex-wrap gap-1.5">
               {['הכל', ...GUEST_SIDES].map(s => {
-                const count = s === 'הכל' ? guests.length : guests.filter(g => g.side === s).length;
+                const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => g.side === s));
                 return <FilterPill key={s} active={sideFilter === s} color="purple" onClick={() => setSideFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
               })}
             </div>
@@ -1115,9 +1116,9 @@ function Guests() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">טלפון</span>
             <div className="flex flex-wrap gap-1.5">
               {['הכל', 'יש טלפון', 'חסר טלפון'].map(s => {
-                let count = guests.length;
-                if (s === 'יש טלפון') count = guests.filter(g => g.phone && g.phone.trim() !== '').length;
-                if (s === 'חסר טלפון') count = guests.filter(g => !g.phone || g.phone.trim() === '').length;
+                let count = countHeads(guests);
+                if (s === 'יש טלפון') count = countHeads(guests.filter(g => g.phone && g.phone.trim() !== ''));
+                if (s === 'חסר טלפון') count = countHeads(guests.filter(g => !g.phone || g.phone.trim() === ''));
                 return <FilterPill key={s} active={phoneFilter === s} color="blue" onClick={() => setPhoneFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
               })}
             </div>
@@ -1131,7 +1132,7 @@ function Guests() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">קבוצה</span>
           <div className="flex flex-wrap gap-1.5">
             {['הכל', ...Array.from(new Set(guests.map(g => g.group).filter(Boolean)))].map(s => {
-              const count = s === 'הכל' ? guests.length : guests.filter(g => g.group === s).length;
+              const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => g.group === s));
               return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
             })}
           </div>
