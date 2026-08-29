@@ -677,9 +677,6 @@ function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-2">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 drop-shadow-sm">לוח בקרה ראשי</h2>
-        <span className="text-[11px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-1 rounded-full shadow-sm animate-pulse flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></span> חי
-        </span>
       </div>
 
       <HeroSection />
