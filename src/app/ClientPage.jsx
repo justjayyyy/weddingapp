@@ -1672,7 +1672,7 @@ function IdeaModal({ idea, onSave, onClose }) {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">קישור (אופציונלי)</label>
-          <input type="url" name="link" defaultValue={idea?.link} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://pinterest.com/..." />
+          <input type="text" name="link" defaultValue={idea?.link} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="pinterest.com/..." />
         </div>
         <div className="flex gap-2 justify-end pt-2">
           <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
@@ -1724,7 +1724,7 @@ function Ideas() {
              </div>
              <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap text-sm leading-relaxed mt-4 sm:mt-0">{idea.text}</p>
              {idea.link && (
-               <a href={idea.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+               <a href={idea.link.match(/^https?:\/\//) ? idea.link : `https://${idea.link}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
                  <span>🔗</span> פתח קישור
                </a>
              )}
