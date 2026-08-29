@@ -158,6 +158,7 @@ function AppProvider({ children }) {
   const [tasks, setTasks] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [tables, setTables] = useState([]);
+  const [ideas, setIdeas] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
 
@@ -186,6 +187,7 @@ function AppProvider({ children }) {
         if (p.tasks) setTasks(p.tasks);
         if (p.vendors) setVendors(p.vendors);
         if (p.tables) setTables(p.tables);
+        if (p.ideas) setIdeas(p.ideas);
         setLoadError(false);
       } catch {
         if (!cancelled) setLoadError(true);
@@ -207,7 +209,7 @@ function AppProvider({ children }) {
     setSaveStatus('saving');
     const t = setTimeout(async () => {
       try {
-        await persistWeddingData({ expenses, guests, tasks, vendors, tables });
+        await persistWeddingData({ expenses, guests, tasks, vendors, tables, ideas });
         if (gen !== saveGen.current) return;
         setSaveStatus('saved');
       } catch {
@@ -216,7 +218,7 @@ function AppProvider({ children }) {
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [expenses, guests, tasks, vendors, tables, ready, loadError]);
+  }, [expenses, guests, tasks, vendors, tables, ideas, ready, loadError]);
 
   const addExpense = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
   const updateExpense = (id, d) => { setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e)); addToast('הוצאה עודכנה'); };
@@ -259,6 +261,10 @@ function AppProvider({ children }) {
       : t.guest_ids.filter(id => id !== guestId),
   })));
   const unassignGuest = (guestId) => setTables(p => p.map(t => ({ ...t, guest_ids: t.guest_ids.filter(id => id !== guestId) })));
+
+  const addIdea = (d) => { setIdeas(p => [{ ...d, id: uid(), created_at: new Date().toISOString() }, ...p]); addToast('רעיון נוסף בהצלחה'); };
+  const updateIdea = (id, d) => { setIdeas(p => p.map(i => i.id === id ? { ...i, ...d } : i)); addToast('רעיון עודכן'); };
+  const deleteIdea = (id) => { setIdeas(p => p.filter(i => i.id !== id)); addToast('רעיון נמחק'); };
 
   const metrics = useMemo(() => {
     const totalExpenses = expenses.reduce((s, e) => s + num(e.total_cost), 0);
@@ -319,12 +325,13 @@ function AppProvider({ children }) {
   }
 
   const value = {
-    expenses, guests, tasks, vendors, tables, metrics,
+    expenses, guests, tasks, vendors, tables, ideas, metrics,
     addExpense, updateExpense, deleteExpense,
     addGuest, addMultipleGuests, updateGuest, deleteGuest,
     addTask, toggleTask, updateTask, deleteTask, reorderTasks,
     addVendor, updateVendor, deleteVendor,
     addTable, updateTable, deleteTable, assignGuest, unassignGuest,
+    addIdea, updateIdea, deleteIdea,
     saveStatus,
     toasts, addToast, confirm: confirmDialog, confirmState, handleConfirm,
   };
@@ -1631,6 +1638,91 @@ function Seating() {
   );
 }
 
+// ── Ideas ────────────────────────────────────────────────────────────────
+function IdeaModal({ idea, onSave, onClose }) {
+  const { addToast } = useApp();
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const text = fd.get('text').trim();
+    if (!text) return addToast('נא להזין טקסט', 'error');
+    onSave({ text, link: fd.get('link').trim() });
+  };
+  return (
+    <Modal title={idea ? 'ערוך רעיון' : 'רעיון חדש'} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">הרעיון שלך</label>
+          <textarea name="text" defaultValue={idea?.text} required rows={4} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="למשל: צלם מגנטים עם מסגרת עץ, שיר כניסה לחופה..."></textarea>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">קישור (אופציונלי)</label>
+          <input type="url" name="link" defaultValue={idea?.link} className="w-full p-2 border rounded-lg bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://pinterest.com/..." />
+        </div>
+        <div className="flex gap-2 justify-end pt-2">
+          <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
+          <Btn type="submit">{idea ? 'שמור' : 'הוסף'}</Btn>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function Ideas() {
+  const { ideas, addIdea, updateIdea, deleteIdea, confirm } = useApp();
+  const [modal, setModal] = useState(null);
+
+  const handleSave = (data) => {
+    if (modal === 'new') addIdea(data);
+    else updateIdea(modal.id, data);
+    setModal(null);
+  };
+
+  const handleDelete = async (id) => {
+    if (await confirm('למחוק את הרעיון הזה?')) deleteIdea(id);
+  };
+
+  return (
+    <div className="space-y-6">
+      {modal && <IdeaModal idea={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
+      
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">רעיונות והשראה 💡</h2>
+        <Btn onClick={() => setModal('new')}>+ הוסף רעיון</Btn>
+      </div>
+
+      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+        {ideas.length === 0 && (
+           <div className="col-span-full py-12 text-center text-slate-400 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 break-inside-avoid">
+             אין רעיונות עדיין. הוסיפו משהו שאהבתם!
+           </div>
+        )}
+        {ideas.map(idea => (
+          <div key={idea.id} className="break-inside-avoid bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/30 p-4 md:p-5 rounded-2xl shadow-sm hover:shadow-md transition-all relative group">
+             <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+               <button onClick={() => setModal(idea)} className="p-1.5 bg-white/80 dark:bg-slate-800/80 rounded-lg text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 backdrop-blur shadow-sm">
+                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+               </button>
+               <button onClick={() => handleDelete(idea.id)} className="p-1.5 bg-white/80 dark:bg-slate-800/80 rounded-lg text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 backdrop-blur shadow-sm">
+                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+               </button>
+             </div>
+             <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap text-sm leading-relaxed mt-4 sm:mt-0">{idea.text}</p>
+             {idea.link && (
+               <a href={idea.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                 <span>🔗</span> פתח קישור
+               </a>
+             )}
+             <div className="mt-4 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+               נוצר ב-{new Date(idea.created_at || Date.now()).toLocaleDateString('he-IL')}
+             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── App shell ──────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'dashboard', label: 'לוח בקרה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg> },
@@ -1639,6 +1731,7 @@ const TABS = [
   { id: 'checklist', label: 'מטלות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
   { id: 'vendors', label: 'ספקים', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg> },
   { id: 'seating', label: 'ישיבה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="M5 5l1.5 1.5" /><path d="M17.5 17.5L19 19" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="M5 19l1.5-1.5" /><path d="M17.5 6.5L19 5" /></svg> },
+  { id: 'ideas', label: 'רעיונות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21h6" /><path d="M12 17v4" /><path d="M12 2a5.5 5.5 0 0 0-4.7 8.3 4 4 0 0 1 1.7 3.7V17h6v-3a4 4 0 0 1 1.7-3.7A5.5 5.5 0 0 0 12 2Z" /></svg> },
 ];
 
 function HeaderButtons() {
@@ -1697,6 +1790,7 @@ function App() {
             {tab === 'checklist' && <Checklist />}
             {tab === 'vendors' && <Vendors />}
             {tab === 'seating' && <Seating />}
+            {tab === 'ideas' && <Ideas />}
           </main>
 
           {/* Mobile Bottom Navigation */}
