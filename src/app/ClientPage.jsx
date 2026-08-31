@@ -1037,6 +1037,7 @@ function Guests() {
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
   const [phoneFilter, setPhoneFilter] = useState('הכל');
+  const [probFilter, setProbFilter] = useState('הכל');
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
@@ -1046,6 +1047,7 @@ function Guests() {
     (sideFilter === 'הכל' || g.side === sideFilter) &&
     (groupFilter === 'הכל' || g.group === groupFilter) &&
     (phoneFilter === 'הכל' || (phoneFilter === 'יש טלפון' ? g.phone && g.phone.trim() !== '' : !g.phone || g.phone.trim() === '')) &&
+    (probFilter === 'הכל' || `${g.arrival_probability ?? 100}%` === probFilter) &&
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
      (g.phone && g.phone.includes(searchQuery)))
   );
@@ -1179,14 +1181,29 @@ function Guests() {
 
         <hr className="border-slate-100 dark:border-slate-700/50 my-1" />
 
-        {/* Group Filter */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">קבוצה</span>
-          <div className="flex flex-wrap gap-1.5">
-            {['הכל', ...Array.from(new Set(guests.map(g => g.group).filter(Boolean)))].map(s => {
-              const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => g.group === s));
-              return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
-            })}
+        <div className="flex flex-col xl:flex-row gap-5 xl:gap-6">
+          {/* Group Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">קבוצה</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', ...Array.from(new Set(guests.map(g => g.group).filter(Boolean)))].map(s => {
+                const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => g.group === s));
+                return <FilterPill key={s} active={groupFilter === s} color="emerald" onClick={() => setGroupFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              })}
+            </div>
+          </div>
+
+          <div className="hidden xl:block w-px bg-slate-100 dark:bg-slate-700/50"></div>
+
+          {/* Prob Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">סבירות הגעה</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', ...Array.from(new Set(guests.map(g => g.arrival_probability ?? 100))).sort((a,b)=>b-a).map(p => `${p}%`)].map(s => {
+                const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => `${g.arrival_probability ?? 100}%` === s));
+                return <FilterPill key={s} active={probFilter === s} color="teal" onClick={() => setProbFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              })}
+            </div>
           </div>
         </div>
       </div>
