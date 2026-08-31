@@ -1037,7 +1037,7 @@ function Guests() {
   const [sideFilter, setSideFilter] = useState('הכל');
   const [groupFilter, setGroupFilter] = useState('הכל');
   const [phoneFilter, setPhoneFilter] = useState('הכל');
-  const [probFilter, setProbFilter] = useState('הכל');
+  const [probFilter, setProbFilter] = useState([]);
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
@@ -1047,7 +1047,7 @@ function Guests() {
     (sideFilter === 'הכל' || g.side === sideFilter) &&
     (groupFilter === 'הכל' || g.group === groupFilter) &&
     (phoneFilter === 'הכל' || (phoneFilter === 'יש טלפון' ? g.phone && g.phone.trim() !== '' : !g.phone || g.phone.trim() === '')) &&
-    (probFilter === 'הכל' || `${g.arrival_probability ?? 100}%` === probFilter) &&
+    (probFilter.length === 0 || probFilter.includes(`${g.arrival_probability ?? 100}%`)) &&
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
      (g.phone && g.phone.includes(searchQuery)))
   );
@@ -1199,9 +1199,22 @@ function Guests() {
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">סבירות הגעה</span>
             <div className="flex flex-wrap gap-1.5">
-              {['הכל', ...Array.from(new Set(guests.map(g => g.arrival_probability ?? 100))).sort((a,b)=>b-a).map(p => `${p}%`)].map(s => {
-                const count = s === 'הכל' ? countHeads(guests) : countHeads(guests.filter(g => `${g.arrival_probability ?? 100}%` === s));
-                return <FilterPill key={s} active={probFilter === s} color="teal" onClick={() => setProbFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
+              <FilterPill active={probFilter.length === 0} color="teal" onClick={() => setProbFilter([])}>
+                הכל <span className="opacity-70 text-[10px] font-normal mr-0.5">({countHeads(guests)})</span>
+              </FilterPill>
+              {Array.from(new Set(guests.map(g => g.arrival_probability ?? 100))).sort((a,b)=>b-a).map(p => `${p}%`).map(s => {
+                const count = countHeads(guests.filter(g => `${g.arrival_probability ?? 100}%` === s));
+                const isActive = probFilter.includes(s);
+                return (
+                  <FilterPill 
+                    key={s} 
+                    active={isActive} 
+                    color="teal" 
+                    onClick={() => setProbFilter(prev => isActive ? prev.filter(x => x !== s) : [...prev, s])}
+                  >
+                    {s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span>
+                  </FilterPill>
+                );
               })}
             </div>
           </div>
