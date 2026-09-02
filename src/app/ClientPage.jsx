@@ -297,12 +297,12 @@ function AppProvider({ children }) {
     const rsvpYesCount = attending.reduce((s, g) => s + num(g.party_size || 1), 0);
     const pendingCount = pending.reduce((s, g) => s + num(g.party_size || 1), 0);
     const expectedAttendees = guests.reduce((sum, g) => {
-      if (g.rsvp_status === 'לא מגיע') return sum;
+      if (g.rsvp_status !== 'מגיע') return sum;
       return sum + (num(g.party_size || 1) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
     const safeVenueCommitment = Math.floor(expectedAttendees * 0.9);
     const totalExpectedGifts = guests.reduce((sum, g) => {
-      if (g.rsvp_status === 'לא מגיע') return sum;
+      if (g.rsvp_status !== 'מגיע') return sum;
       return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
     const totalActualGifts = guests.reduce((s, g) => s + num(g.actual_gift), 0);
