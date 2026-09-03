@@ -322,6 +322,7 @@ function AppProvider({ children }) {
 
     const bepPerGuest = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
     const netProfitLoss = totalExpectedGifts - totalExpensesWithBuffer;
+    const netProfitLossArriving = expectedGiftsArriving - totalExpensesWithBuffer;
 
     const expensesByCategory = EXPENSE_CATEGORIES
       .map(cat => ({ name: cat, value: expenses.filter(e => e.category === cat).reduce((s, e) => s + num(e.total_cost), 0) }))
@@ -336,7 +337,7 @@ function AppProvider({ children }) {
       rsvpYesCount, pendingCount, totalInvited: guests.reduce((s, g) => s + num(g.party_size || 1), 0),
       expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending, safeVenueCommitment, 
       totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, totalActualGifts,
-      bepPerGuest, netProfitLoss, expensesByCategory,
+      bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory,
       tasksDone, tasksTotal,
     };
   }, [expenses, guests, tasks]);
@@ -710,7 +711,7 @@ function Dashboard() {
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
     totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
     expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
-    totalInvited, bepPerGuest, netProfitLoss, expensesByCategory, tasksDone, tasksTotal } = metrics;
+    totalInvited, bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal } = metrics;
 
   const barItems = [
     { name: 'סה״כ הוצאות', amount: totalExpensesWithBuffer, fill: '#6366f1' },
@@ -744,6 +745,20 @@ function Dashboard() {
             <p className={`text-sm mt-3 font-medium bg-white/40 dark:bg-black/20 inline-block px-3 py-1.5 rounded-lg ${isProfit ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
               {isProfit ? '✨ מצוין! נראה שתכסו את כל ההוצאות.' : `⚠️ זהירות, צפוי מחסור של ${fmt(Math.abs(netProfitLoss))}.`}
             </p>
+            <div className="mt-5 flex flex-col gap-2 pt-4 border-t border-emerald-200/30 dark:border-slate-700/50">
+              <div className="flex justify-between items-center text-sm font-medium">
+                <span className={isProfit ? 'text-emerald-800/70 dark:text-emerald-300/70' : 'text-rose-800/70 dark:text-rose-300/70'}>מבוסס רק על מאשרים:</span>
+                <span className={netProfitLossArriving >= 0 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-rose-700 dark:text-rose-400 font-bold'}>
+                  {netProfitLossArriving >= 0 ? '+' : ''}{fmt(netProfitLossArriving)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-medium">
+                <span className={isProfit ? 'text-emerald-800/70 dark:text-emerald-300/70' : 'text-rose-800/70 dark:text-rose-300/70'}>תוספת פוטנציאלית מממתינים (משוקלל):</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  +{fmt(expectedGiftsPending)}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
