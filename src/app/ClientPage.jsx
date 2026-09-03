@@ -1902,6 +1902,7 @@ function Seating() {
   const [viewMode, setViewMode] = useState('map');
   const [zoom, setZoom] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [listWaitlistOpen, setListWaitlistOpen] = useState(true);
   const inspectorTable = tables.find(t => t.id === inspector);
 
   return (
@@ -1937,7 +1938,11 @@ function Seating() {
 
       {unassigned.length > 0 && (
         <Card className="p-4">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">ממתינים לשיבוץ ({unassigned.length})</p>
+          <div className="flex items-center justify-between cursor-pointer group mb-3" onClick={() => setListWaitlistOpen(!listWaitlistOpen)}>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">ממתינים לשיבוץ ({unassigned.length})</p>
+            <span className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200">{listWaitlistOpen ? '▼' : '▶'}</span>
+          </div>
+          {listWaitlistOpen && (
           <div className="flex flex-wrap gap-2">
             {unassigned.map(g => (
               <div key={g.id} className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-1.5 text-xs">
@@ -1955,6 +1960,7 @@ function Seating() {
               </div>
             ))}
           </div>
+          )}
         </Card>
       )}
 
@@ -2000,7 +2006,7 @@ function Seating() {
               <button onClick={() => setZoom(p => Math.min(2, p + 0.1))} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full font-bold text-lg">+</button>
             </div>
 
-            <div className="w-full h-full overflow-auto custom-scrollbar"
+            <div className="w-full h-full overflow-auto custom-scrollbar relative"
                  onDragOver={e => e.preventDefault()} 
                  onDrop={e => {
                    e.preventDefault();
@@ -2020,9 +2026,10 @@ function Seating() {
                    }
                  }}>
               
-              <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: '3000px', height: '3000px' }} 
-                   className="relative bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] transition-transform duration-200">
-              {tables.map((t, index) => {
+              <div style={{ width: 3000 * zoom, height: 3000 * zoom }} className="relative">
+                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: '3000px', height: '3000px' }} 
+                     className="absolute top-0 left-0 bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] transition-transform duration-200">
+                {tables.map((t, index) => {
               const seatedCount = t.guest_ids.length;
               const isFull = seatedCount >= num(t.capacity);
               const cols = 4;
@@ -2077,9 +2084,10 @@ function Seating() {
                 </div>
               );
             })}
-            </div>
-            </div>
+                </div>
+              </div>
             {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium z-0 pointer-events-none">הוסף שולחן או רחבה כדי להתחיל</div>}
+            </div>
           </div>
         </div>
       )}
