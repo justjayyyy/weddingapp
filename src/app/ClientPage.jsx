@@ -330,6 +330,14 @@ function AppProvider({ children }) {
 
     const tasksDone = tasks.filter(t => t.done).length;
     const tasksTotal = tasks.length;
+    
+    const probabilityBreakdown = Array.from(new Set(guests.map(g => g.arrival_probability ?? 100)))
+      .sort((a,b) => b-a)
+      .map(p => {
+        const count = guests.filter(g => (g.arrival_probability ?? 100) === p).reduce((s, g) => s + num(g.party_size || 1), 0);
+        return { prob: p, count };
+      })
+      .filter(p => p.count > 0);
 
     return {
       totalExpenses, totalOutOfPocket, totalBalanceDue,
@@ -338,7 +346,7 @@ function AppProvider({ children }) {
       expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending, safeVenueCommitment, 
       totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, totalActualGifts,
       bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory,
-      tasksDone, tasksTotal,
+      tasksDone, tasksTotal, probabilityBreakdown,
     };
   }, [expenses, guests, tasks]);
 
@@ -711,7 +719,7 @@ function Dashboard() {
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
     totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
     expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
-    totalInvited, bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal } = metrics;
+    totalInvited, bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal, probabilityBreakdown } = metrics;
 
   const barItems = [
     { name: 'סה״כ הוצאות', amount: totalExpensesWithBuffer, fill: '#6366f1' },
@@ -822,6 +830,18 @@ function Dashboard() {
             <div>
               <p className="text-2xl font-bold text-indigo-600">{safeVenueCommitment}</p>
               <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">התחייבות (90%)</p>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700/50">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 text-right">פילוח מוזמנים לפי סבירות הגעה</p>
+            <div className="flex flex-wrap gap-2">
+              {probabilityBreakdown.map(({ prob, count }) => (
+                <div key={prob} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 shadow-sm">
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{prob}% סבירות:</span>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{count} אורחים</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
