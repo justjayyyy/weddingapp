@@ -334,10 +334,15 @@ function AppProvider({ children }) {
     const probabilityBreakdown = Array.from(new Set(guests.map(g => g.arrival_probability ?? 100)))
       .sort((a,b) => b-a)
       .map(p => {
-        const count = guests.filter(g => (g.arrival_probability ?? 100) === p).reduce((s, g) => s + num(g.party_size || 1), 0);
-        return { prob: p, count };
+        const matching = guests.filter(g => (g.arrival_probability ?? 100) === p);
+        const count = matching.reduce((s, g) => s + num(g.party_size || 1), 0);
+        const expectedGifts = matching.reduce((sum, g) => {
+          if (g.rsvp_status === 'לא מגיע') return sum;
+          return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
+        }, 0);
+        return { prob: p, count, expectedGifts };
       })
-      .filter(p => p.count > 0);
+      .filter(p => p.count > 0 || p.expectedGifts > 0);
 
     return {
       totalExpenses, totalOutOfPocket, totalBalanceDue,
@@ -714,8 +719,34 @@ function HeroSection() {
   );
 }
 
+function ProbabilityGuestsListModal({ prob, guests, deleteGuest, onEditGuest, onClose }) {
+  const filtered = guests.filter(g => (g.arrival_probability ?? 100) === prob && g.rsvp_status !== 'לא מגיע');
+  return (
+    <Modal title={`אורחים בסבירות ${prob}%`} onClose={onClose}>
+      <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1">
+        {filtered.map(g => (
+          <div key={g.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div>
+              <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{g.name} <span className="font-normal text-slate-500">({g.party_size || 1})</span></div>
+              <div className="text-[10px] text-slate-500">{g.rsvp_status} • {fmt(g.estimated_gift)} מתנה</div>
+            </div>
+            <div className="flex gap-1">
+              <button onClick={() => onEditGuest(g)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-900 rounded shadow-sm border border-slate-200 dark:border-slate-600">✎</button>
+              <button onClick={() => deleteGuest(g.id)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-900 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <div className="text-center text-slate-500 text-sm py-4">אין אורחים בקבוצה זו.</div>}
+      </div>
+    </Modal>
+  );
+}
+
 function Dashboard() {
-  const { metrics } = useApp();
+  const { metrics, guests, updateGuest, deleteGuest, confirm } = useApp();
+  const [selectedProbPopup, setSelectedProbPopup] = useState(null);
+  const [editGuestPopup, setEditGuestPopup] = useState(null);
+
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
     totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
     expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
@@ -800,6 +831,18 @@ function Dashboard() {
               <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(expectedGiftsPending)}</span>
             </div>
           </div>
+
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">פילוח לפי סבירות</p>
+            <div className="flex flex-wrap gap-1.5">
+              {probabilityBreakdown.map(({ prob, expectedGifts }) => (
+                <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1 px-2 py-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors cursor-pointer text-left">
+                  <span className="text-[10px] font-semibold text-slate-500">{prob}%:</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{fmt(expectedGifts)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Guest Overview - Spans 2 cols on Desktop/Tablet */}
@@ -837,10 +880,10 @@ function Dashboard() {
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 text-right">פילוח מוזמנים לפי סבירות הגעה</p>
             <div className="flex flex-wrap gap-2">
               {probabilityBreakdown.map(({ prob, count }) => (
-                <div key={prob} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors cursor-pointer">
                   <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{prob}% סבירות:</span>
                   <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{count} אורחים</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -903,6 +946,23 @@ function Dashboard() {
           <BarChart items={barItems} />
         </div>
       </div>
+
+      {selectedProbPopup !== null && (
+        <ProbabilityGuestsListModal 
+          prob={selectedProbPopup} 
+          guests={guests}
+          deleteGuest={id => confirm('להסיר אורח זה?').then(y => { if(y) deleteGuest(id); })}
+          onEditGuest={g => setEditGuestPopup(g)}
+          onClose={() => setSelectedProbPopup(null)} 
+        />
+      )}
+      {editGuestPopup && (
+        <GuestModal 
+          guest={editGuestPopup} 
+          onSave={data => { updateGuest(editGuestPopup.id, data); setEditGuestPopup(null); }} 
+          onClose={() => setEditGuestPopup(null)} 
+        />
+      )}
     </div>
   );
 }
