@@ -287,7 +287,9 @@ function AppProvider({ children }) {
   const deleteTimelineEvent = (id) => { setTimeline(p => p.filter(i => i.id !== id)); addToast('אירוע נמחק'); };
 
   const metrics = useMemo(() => {
-    const totalExpenses = expenses.reduce((s, e) => s + num(e.total_cost), 0);
+    const totalActualExpenses = expenses.filter(e => !e.estimated).reduce((s, e) => s + num(e.total_cost), 0);
+    const totalEstimatedExpenses = expenses.filter(e => e.estimated).reduce((s, e) => s + num(e.total_cost), 0);
+    const totalExpenses = totalActualExpenses + totalEstimatedExpenses;
     const totalOutOfPocket = expenses.reduce((s, e) => s + num(e.deposit_paid), 0);
     const totalBalanceDue = totalExpenses - totalOutOfPocket;
     const contingencyBuffer = totalExpenses * 0.1;
@@ -350,7 +352,7 @@ function AppProvider({ children }) {
       .filter(p => p.count > 0 || p.expectedGifts > 0);
 
     return {
-      totalExpenses, totalOutOfPocket, totalBalanceDue,
+      totalExpenses, totalActualExpenses, totalEstimatedExpenses, totalOutOfPocket, totalBalanceDue,
       contingencyBuffer, totalExpensesWithBuffer,
       rsvpYesCount, pendingCount, totalInvited: guests.reduce((s, g) => s + num(g.party_size || 1), 0),
       expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending, safeVenueCommitment, 
@@ -810,7 +812,7 @@ function Dashboard() {
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
     totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
     expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
-    totalInvited, bepPerGuest, averageGiftExpected, bepComparison, expenseProgress, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal, probabilityBreakdown } = metrics;
+    totalInvited, bepPerGuest, averageGiftExpected, bepComparison, expenseProgress, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal, probabilityBreakdown, totalActualExpenses, totalEstimatedExpenses } = metrics;
 
   const barItems = [
     { name: 'סה״כ הוצאות', amount: totalExpensesWithBuffer, fill: '#6366f1' },
@@ -874,9 +876,24 @@ function Dashboard() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
             <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-2 relative z-10">סה״כ הוצאות</p>
             <h3 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-slate-100 relative z-10">{fmt(totalExpensesWithBuffer)}</h3>
-            <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-3 py-1.5 rounded-lg text-xs font-semibold w-max relative z-10 border border-orange-100 dark:border-orange-800/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-              כולל {fmt(contingencyBuffer)} כרית ביטחון (10%)
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 relative z-10">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500 dark:text-slate-400 font-semibold">הוצאות ודאיות:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300">{fmt(totalActualExpenses)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500 dark:text-slate-400 font-semibold">הוצאות משוערות:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300">{fmt(totalEstimatedExpenses)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-2 py-1.5 rounded mt-1 border border-orange-100/50 dark:border-orange-800/30">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                    כרית ביטחון (10%):
+                  </span>
+                  <span className="font-bold">{fmt(contingencyBuffer)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
