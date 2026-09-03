@@ -1842,10 +1842,11 @@ function TableModal({ table, onSave, onClose }) {
   );
 }
 
-function TableInspectorModal({ table, onClose, onEdit, onDelete, onUnassign, guestsList }) {
+function TableInspectorModal({ table, onClose, onEdit, onDelete, onUnassign, onScale, guestsList }) {
   const seated = table.guest_ids.map(id => guestsList.find(g => g.id === id)).filter(Boolean);
   const isMapEl = ['chuppah', 'dancefloor', 'bar', 'buffet'].includes(table.shape);
   const free = num(table.capacity) - seated.length;
+  const scale = table.scale || 1;
   
   return (
     <Modal title={table.name} onClose={onClose}>
@@ -1856,6 +1857,15 @@ function TableInspectorModal({ table, onClose, onEdit, onDelete, onUnassign, gue
              <KpiCard title="פנוי" value={free} color={free < 0 ? 'red' : 'green'} />
           </div>
         )}
+        
+        <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">גודל במפה:</span>
+          <div className="flex items-center gap-3">
+            <Btn variant="secondary" size="sm" onClick={() => onScale(scale - 0.25)}>-</Btn>
+            <span className="w-8 text-center text-sm font-mono text-slate-500">{scale}x</span>
+            <Btn variant="secondary" size="sm" onClick={() => onScale(scale + 0.25)}>+</Btn>
+          </div>
+        </div>
 
         {!isMapEl && seated.length > 0 && (
           <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -1890,18 +1900,21 @@ function Seating() {
   const totalSeats = tables.reduce((s, t) => s + num(t.capacity), 0);
 
   const [viewMode, setViewMode] = useState('list');
+  const [zoom, setZoom] = useState(1);
+  const inspectorTable = tables.find(t => t.id === inspector);
 
   return (
     <div className="space-y-6">
       {modal && <TableModal table={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      {inspector && (
+      {inspectorTable && (
         <TableInspectorModal 
-          table={inspector}
+          table={inspectorTable}
           guestsList={guests}
           onClose={() => setInspector(null)}
-          onEdit={() => { setModal(inspector); setInspector(null); }}
-          onDelete={() => { confirm(`למחוק את ${inspector.name}?`).then(y => { if(y){ deleteTable(inspector.id); setInspector(null); } }) }}
-          onUnassign={assignGuest ? (id) => unassignGuest(id) : null}
+          onEdit={() => { setModal(inspectorTable); setInspector(null); }}
+          onDelete={() => { confirm(`למחוק את ${inspectorTable.name}?`).then(y => { if(y){ deleteTable(inspectorTable.id); setInspector(null); } }) }}
+          onUnassign={id => unassignGuest(id)}
+          onScale={s => updateTable(inspectorTable.id, { scale: Math.max(0.5, Math.min(3, s)) })}
         />
       )}
       <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50">
@@ -1932,7 +1945,7 @@ function Seating() {
                   <select onChange={e => { if (e.target.value) assignGuest(g.id, e.target.value); e.target.value = ''; }} defaultValue=""
                     className="text-xs border-0 bg-transparent text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer">
                     <option value="" disabled>שבץ ▾</option>
-                    {tables.map(t => {
+                    {tables.filter(t => !['chuppah', 'dancefloor', 'bar', 'buffet'].includes(t.shape)).map(t => {
                       const free = num(t.capacity) - t.guest_ids.length;
                       return <option key={t.id} value={t.id} disabled={free <= 0}>{t.name} ({free} מקום)</option>;
                     })}
@@ -1972,7 +1985,7 @@ function Seating() {
           {/* Map Canvas */}
           <div className="relative flex-grow h-full bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]"
                onDragOver={e => e.preventDefault()} 
-               onDrop={e => {
+                onDrop={e => {
                  e.preventDefault();
                  const guestId = e.dataTransfer.getData('guestId');
                  if (guestId) { unassignGuest(guestId); return; }
@@ -1980,17 +1993,25 @@ function Seating() {
                  const tableId = e.dataTransfer.getData('tableId');
                  if (tableId) {
                    const rect = e.currentTarget.getBoundingClientRect();
-                   const x = e.clientX - rect.left - 40; 
-                   const y = e.clientY - rect.top - 40;
-                   const boundedX = Math.max(0, Math.min(rect.width - 80, x));
-                   const boundedY = Math.max(0, Math.min(rect.height - 80, y));
+                   const x = (e.clientX - rect.left) / zoom - 40; 
+                   const y = (e.clientY - rect.top) / zoom - 40;
+                   const boundedX = Math.max(0, x);
+                   const boundedY = Math.max(0, y);
                    updateTable(tableId, { x: boundedX, y: boundedY });
                  }
                }}>
-            <div className="absolute top-4 left-4 text-xs font-semibold text-slate-500 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm pointer-events-none z-10">
+            
+            <div className="absolute top-4 left-4 text-xs font-semibold text-slate-500 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm pointer-events-none z-20">
               💡 גרור אנשים לשולחנות, או לחיצה אחת על שולחן לעריכה
             </div>
             
+            <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-800/90 rounded-full shadow-md backdrop-blur-sm flex items-center p-1 border border-slate-200 dark:border-slate-700 z-20">
+              <button onClick={() => setZoom(p => Math.max(0.5, p - 0.1))} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full font-bold text-lg">-</button>
+              <span className="w-12 text-center text-xs font-bold text-slate-700 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(p => Math.min(2, p + 0.1))} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full font-bold text-lg">+</button>
+            </div>
+            
+            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }} className="absolute inset-0 transition-transform duration-200">
             {tables.map((t, index) => {
               const seatedCount = t.guest_ids.length;
               const isFull = seatedCount >= num(t.capacity);
@@ -2008,9 +2029,9 @@ function Seating() {
                    <div key={t.id}
                         draggable
                         onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('tableId', t.id); }}
-                        onClick={() => setInspector(t)}
-                        style={{ left: px, top: py, position: 'absolute' }}
-                        className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center cursor-move shadow-lg transition-all hover:shadow-xl hover:scale-105 border-2 border-slate-300 dark:border-slate-600 bg-gradient-to-br from-white to-slate-100 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-200 z-0">
+                        onClick={() => setInspector(t.id)}
+                        style={{ left: px, top: py, position: 'absolute', transform: `scale(${t.scale || 1})`, transformOrigin: 'center' }}
+                        className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center cursor-move shadow-lg transition-shadow hover:shadow-xl border-2 border-slate-300 dark:border-slate-600 bg-gradient-to-br from-white to-slate-100 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-200 z-0">
                      <span className="text-4xl mb-2 pointer-events-none drop-shadow-sm">{icons[t.shape]}</span>
                      <span className="text-xs font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
                    </div>
@@ -2035,14 +2056,15 @@ function Seating() {
                            updateTable(tableId, { x, y });
                         }
                      }}
-                     onClick={() => setInspector(t)}
-                     style={{ left: px, top: py, position: 'absolute' }}
-                     className={`${isRect ? 'w-28 h-16 rounded-xl' : 'w-24 h-24 rounded-full'} flex flex-col items-center justify-center cursor-move shadow-md transition-all hover:shadow-lg hover:scale-105 border-4 z-10 ${isFull ? 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-100' : 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'}`}>
+                     onClick={() => setInspector(t.id)}
+                     style={{ left: px, top: py, position: 'absolute', transform: `scale(${t.scale || 1})`, transformOrigin: 'center' }}
+                     className={`${isRect ? 'w-28 h-16 rounded-xl' : 'w-24 h-24 rounded-full'} flex flex-col items-center justify-center cursor-move shadow-md transition-shadow hover:shadow-lg border-4 z-10 ${isFull ? 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-100' : 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'}`}>
                   <span className="text-xs font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
                   <span className="text-[10px] font-medium opacity-80 mt-1 pointer-events-none">{seatedCount}/{t.capacity}</span>
                 </div>
               );
             })}
+            </div>
             {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium z-0">הוסף שולחן או רחבה כדי להתחיל</div>}
           </div>
         </div>
