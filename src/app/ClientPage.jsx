@@ -1896,10 +1896,12 @@ function Seating() {
   const handleSave = (data) => { 
     if (modal === 'new') {
       const scrollEl = document.getElementById('map-scroll-container');
-      if (scrollEl && viewMode === 'map') {
+      const innerEl = document.getElementById('map-inner-container');
+      if (scrollEl && innerEl && viewMode === 'map') {
         const rect = scrollEl.getBoundingClientRect();
-        data.x = (scrollEl.scrollLeft + rect.width / 2) / zoom - 60;
-        data.y = (scrollEl.scrollTop + rect.height / 2) / zoom - 60;
+        const innerRect = innerEl.getBoundingClientRect();
+        data.x = (rect.left + rect.width / 2 - innerRect.left) / zoom - 60;
+        data.y = (rect.top + rect.height / 2 - innerRect.top) / zoom - 60;
       }
       addTable(data);
     } else {
@@ -2036,19 +2038,20 @@ function Seating() {
                    
                    const tableId = e.dataTransfer.getData('tableId');
                    if (tableId) {
-                     const rect = e.currentTarget.getBoundingClientRect();
-                     const scrollX = e.currentTarget.scrollLeft;
-                     const scrollY = e.currentTarget.scrollTop;
-                     const x = (e.clientX - rect.left + scrollX) / zoom - 40; 
-                     const y = (e.clientY - rect.top + scrollY) / zoom - 40;
-                     const boundedX = Math.max(0, x);
-                     const boundedY = Math.max(0, y);
-                     updateTable(tableId, { x: boundedX, y: boundedY });
+                     const innerEl = document.getElementById('map-inner-container');
+                     if (innerEl) {
+                       const innerRect = innerEl.getBoundingClientRect();
+                       const x = (e.clientX - innerRect.left) / zoom - 40;
+                       const y = (e.clientY - innerRect.top) / zoom - 40;
+                       const boundedX = Math.max(0, Math.min(3000 - 100, x));
+                       const boundedY = Math.max(0, Math.min(3000 - 100, y));
+                       updateTable(tableId, { x: boundedX, y: boundedY });
+                     }
                    }
                  }}>
               
               <div style={{ width: 3000 * zoom, height: 3000 * zoom }} className="relative">
-                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: '3000px', height: '3000px' }} 
+                <div id="map-inner-container" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: '3000px', height: '3000px' }} 
                      className="absolute top-0 left-0 bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] transition-transform duration-200">
                 {tables.map((t, index) => {
               const seatedCount = t.guest_ids.length;
@@ -2088,13 +2091,15 @@ function Seating() {
                         if (guestId) assignGuest(guestId, t.id);
                         const tableId = e.dataTransfer.getData('tableId');
                         if (tableId) {
-                           const container = e.currentTarget.parentElement.parentElement;
-                           const rect = container.getBoundingClientRect();
-                           const scrollX = container.scrollLeft;
-                           const scrollY = container.scrollTop;
-                           const x = (e.clientX - rect.left + scrollX) / zoom - 40; 
-                           const y = (e.clientY - rect.top + scrollY) / zoom - 40;
-                           updateTable(tableId, { x, y });
+                           const innerEl = document.getElementById('map-inner-container');
+                           if (innerEl) {
+                             const innerRect = innerEl.getBoundingClientRect();
+                             const x = (e.clientX - innerRect.left) / zoom - 40; 
+                             const y = (e.clientY - innerRect.top) / zoom - 40;
+                             const boundedX = Math.max(0, Math.min(3000 - 100, x));
+                             const boundedY = Math.max(0, Math.min(3000 - 100, y));
+                             updateTable(tableId, { x: boundedX, y: boundedY });
+                           }
                         }
                      }}
                      onClick={() => setInspector(t.id)}
