@@ -269,7 +269,7 @@ function AppProvider({ children }) {
   const deleteVendor = (id) => { setVendors(p => p.filter(v => v.id !== id)); addToast('ספק נמחק'); };
 
   const addTable = (d) => { setTables(p => [...p, { ...d, id: uid(), capacity: num(d.capacity), guest_ids: [] }]); addToast('שולחן חדש נוסף'); };
-  const updateTable = (id, d) => setTables(p => p.map(t => t.id === id ? { ...t, ...d, capacity: num(d.capacity) } : t));
+  const updateTable = (id, d) => setTables(p => p.map(t => t.id === id ? { ...t, ...d, capacity: d.capacity !== undefined ? num(d.capacity) : t.capacity } : t));
   const deleteTable = (id) => { setTables(p => p.filter(t => t.id !== id)); addToast('שולחן נמחק'); };
   const assignGuest = (guestId, tableId) => setTables(p => p.map(t => ({
     ...t, guest_ids: t.id === tableId
@@ -1924,7 +1924,7 @@ function Seating() {
       if (scrollEl) {
         hasCenteredMap.current = true;
         setTimeout(() => {
-           scrollEl.scrollLeft = 0;
+           scrollEl.scrollLeft = -9999;
            scrollEl.scrollTop = 0;
         }, 50);
       }
