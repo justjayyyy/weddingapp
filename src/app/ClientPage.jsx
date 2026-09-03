@@ -321,6 +321,10 @@ function AppProvider({ children }) {
     const totalActualGifts = guests.reduce((s, g) => s + num(g.actual_gift), 0);
 
     const bepPerGuest = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
+    const averageGiftExpected = expectedAttendees > 0 ? totalExpectedGifts / expectedAttendees : 0;
+    const bepComparison = averageGiftExpected - bepPerGuest;
+    const expenseProgress = totalExpensesWithBuffer > 0 ? Math.min(100, Math.round((totalOutOfPocket / totalExpensesWithBuffer) * 100)) : 0;
+
     const netProfitLoss = totalExpectedGifts - totalExpensesWithBuffer;
     const netProfitLossArriving = expectedGiftsArriving - totalExpensesWithBuffer;
 
@@ -350,7 +354,7 @@ function AppProvider({ children }) {
       rsvpYesCount, pendingCount, totalInvited: guests.reduce((s, g) => s + num(g.party_size || 1), 0),
       expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending, safeVenueCommitment, 
       totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, totalActualGifts,
-      bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory,
+      bepPerGuest, averageGiftExpected, bepComparison, expenseProgress, netProfitLoss, netProfitLossArriving, expensesByCategory,
       tasksDone, tasksTotal, probabilityBreakdown,
     };
   }, [expenses, guests, tasks]);
@@ -799,7 +803,7 @@ function Dashboard() {
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
     totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
     expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
-    totalInvited, bepPerGuest, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal, probabilityBreakdown } = metrics;
+    totalInvited, bepPerGuest, averageGiftExpected, bepComparison, expenseProgress, netProfitLoss, netProfitLossArriving, expensesByCategory, tasksDone, tasksTotal, probabilityBreakdown } = metrics;
 
   const barItems = [
     { name: 'סה״כ הוצאות', amount: totalExpensesWithBuffer, fill: '#6366f1' },
@@ -808,192 +812,216 @@ function Dashboard() {
   const isProfit = netProfitLoss >= 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between pb-2">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 drop-shadow-sm">לוח בקרה ראשי</h2>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200/50 dark:border-slate-700/50">
+        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">לוח בקרה ראשי</h2>
       </div>
 
       <HeroSection />
 
-      {/* Bento Box Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 auto-rows-min">
-
-        {/* Profit/Loss Feature Card - Spans 2 columns on desktop */}
-        <div className={`col-span-1 md:col-span-2 rounded-3xl p-6 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${isProfit
-          ? 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-900/40'
-          : 'bg-gradient-to-br from-rose-50 to-red-100 dark:from-rose-900/20 dark:to-red-900/40'
+      {/* TIER 1: HIGH LEVEL FINANCIAL PULSE */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        {/* Profit/Loss Feature Card */}
+        <div className={`xl:col-span-1 rounded-[2rem] p-8 shadow-lg border flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${isProfit
+          ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-300 text-white shadow-emerald-500/20'
+          : 'bg-gradient-to-br from-rose-400 to-rose-600 border-rose-300 text-white shadow-rose-500/20'
           }`}>
-          <p className={`text-xs font-bold uppercase tracking-widest ${isProfit ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-            תחזית תקציב עכשווית
-          </p>
-          <div className="mt-4">
-            <h3 className={`text-5xl lg:text-6xl font-extrabold tracking-tight ${isProfit ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold uppercase tracking-widest text-white/80">
+              תחזית תקציב (רווח/הפסד)
+            </p>
+            <div className={`p-2 rounded-xl backdrop-blur-md bg-white/20 ${isProfit ? 'text-emerald-100' : 'text-rose-100'}`}>
+              {isProfit ? '📈' : '📉'}
+            </div>
+          </div>
+          <div className="mt-6 mb-8">
+            <h3 className="text-6xl lg:text-7xl font-black tracking-tighter drop-shadow-sm">
               {isProfit ? '+' : ''}{fmt(netProfitLoss)}
             </h3>
-            <p className={`text-sm mt-3 font-medium bg-white/40 dark:bg-black/20 inline-block px-3 py-1.5 rounded-lg ${isProfit ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
-              {isProfit ? '✨ מצוין! נראה שתכסו את כל ההוצאות.' : `⚠️ זהירות, צפוי מחסור של ${fmt(Math.abs(netProfitLoss))}.`}
+            <p className="text-sm mt-4 font-medium bg-white/20 backdrop-blur-md inline-block px-4 py-2 rounded-xl">
+              {isProfit ? '✨ מעולה! נראה שתכסו את ההוצאות ברוגע.' : `⚠️ זהירות, צפוי מחסור. יש להיערך בהתאם.`}
             </p>
-            <div className={`mt-5 flex flex-col gap-2 pt-4 border-t ${isProfit ? 'border-emerald-200/50 dark:border-emerald-800/50' : 'border-rose-200/50 dark:border-rose-800/50'}`}>
-              <div className="flex justify-between items-center text-sm font-medium">
-                <span className={isProfit ? 'text-emerald-800/80 dark:text-emerald-300/80' : 'text-rose-800/80 dark:text-rose-300/80'}>מבוסס רק על מאשרים:</span>
-                <span className={netProfitLossArriving >= 0 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-rose-700 dark:text-rose-400 font-bold'}>
-                  {netProfitLossArriving >= 0 ? '+' : ''}{fmt(netProfitLossArriving)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm font-medium">
-                <span className={isProfit ? 'text-emerald-800/80 dark:text-emerald-300/80' : 'text-rose-800/80 dark:text-rose-300/80'}>תוספת פוטנציאלית מממתינים (משוקלל):</span>
-                <span className={isProfit ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-rose-700 dark:text-rose-400 font-bold'}>
-                  +{fmt(expectedGiftsPending)}
-                </span>
-              </div>
-            </div>
           </div>
-        </div>
-
-        {/* Expenses Summary */}
-        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ הוצאות</p>
-          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpensesWithBuffer)}</h3>
-          <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-orange-400"></span>
-            {fmt(contingencyBuffer)} כרית ביטחון (10%)
-          </p>
-        </div>
-
-        {/* Gifts Summary */}
-        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ מתנות צפויות</p>
-          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpectedGifts)}</h3>
-          <div className="mt-3 space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-700">
-            <div className="flex justify-between items-center text-xs">
-              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                אישרו הגעה:
+          <div className="flex flex-col gap-3 pt-5 border-t border-white/20">
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span className="text-white/80">מבוסס אך ורק על מאשרים:</span>
+              <span className="font-bold bg-white/10 px-2 py-0.5 rounded">
+                {netProfitLossArriving >= 0 ? '+' : ''}{fmt(netProfitLossArriving)}
               </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(expectedGiftsArriving)}</span>
             </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                ממתינים <span className="text-[10px] opacity-70">(משוקלל)</span>:
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span className="text-white/80">פוטנציאל נוסף מממתינים:</span>
+              <span className="font-bold bg-white/10 px-2 py-0.5 rounded">
+                +{fmt(expectedGiftsPending)}
               </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(expectedGiftsPending)}</span>
-            </div>
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">פילוח לפי סבירות</p>
-            <div className="flex flex-wrap gap-1.5">
-              {probabilityBreakdown.map(({ prob, expectedGifts }) => (
-                <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1 px-2 py-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors cursor-pointer text-left">
-                  <span className="text-[10px] font-semibold text-slate-500">{prob}%:</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{fmt(expectedGifts)}</span>
-                </button>
-              ))}
             </div>
           </div>
         </div>
 
-        {/* Guest Overview - Spans 2 cols on Desktop/Tablet */}
-        <div className="col-span-1 md:col-span-2 xl:col-span-2 rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100">סטטוס מוזמנים</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{totalInvited}</p>
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">סה״כ מוזמנים</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-            <div>
-              <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
-              <p className="text-[10px] text-slate-500 font-medium">אישרו ({Math.round(expectedAttendeesArriving)} יגיעו)</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-amber-500">{pendingCount}</p>
-              <p className="text-[10px] text-slate-500 font-medium">ממתינים ({Math.round(expectedAttendeesPending)} יגיעו)</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-blue-600">{Math.round(expectedAttendees)}</p>
-              <p className="text-[10px] text-slate-500 font-medium">סה״כ צפי הגעה</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-indigo-600">{safeVenueCommitment}</p>
-              <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">התחייבות (90%)</p>
+        {/* Expenses & Gifts Summary (Stacked or Side by Side) */}
+        <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Expenses */}
+          <div className="rounded-[2rem] p-8 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-300 hover:shadow-md flex flex-col justify-center relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-2 relative z-10">סה״כ הוצאות</p>
+            <h3 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-slate-100 relative z-10">{fmt(totalExpensesWithBuffer)}</h3>
+            <div className="mt-4 inline-flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-3 py-1.5 rounded-lg text-xs font-semibold w-max relative z-10 border border-orange-100 dark:border-orange-800/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+              כולל {fmt(contingencyBuffer)} כרית ביטחון (10%)
             </div>
           </div>
 
-          <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700/50">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 text-right">פילוח מוזמנים לפי סבירות הגעה</p>
-            <div className="flex flex-wrap gap-2">
-              {probabilityBreakdown.map(({ prob, count }) => (
-                <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm transition-colors cursor-pointer">
-                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{prob}% סבירות:</span>
-                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{count} אורחים</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Break Even Point */}
-        <div className="rounded-3xl p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-sm border border-blue-100 dark:border-blue-800/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold mb-1">נקודת איזון לאורח</p>
-          <h3 className="text-3xl font-bold text-blue-800 dark:text-blue-200">{fmt(Math.round(bepPerGuest))}</h3>
-          <p className="text-[10px] text-blue-600/70 dark:text-blue-300/70 mt-2 font-medium">עלות המנה הנדרשת לכיסוי</p>
-        </div>
-
-        {/* Payment Flow (Out of pocket & Balance) */}
-        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col justify-center">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-700">
-              <div>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase">שולם מראש</p>
-                <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{fmt(totalOutOfPocket)}</p>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-[10px] text-amber-500 font-semibold uppercase">יתרה לתשלום</p>
-                <p className="text-lg font-bold text-amber-600">{fmt(totalBalanceDue)}</p>
+          {/* Expected Gifts */}
+          <div className="rounded-[2rem] p-8 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-300 hover:shadow-md flex flex-col justify-center relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-2 relative z-10">סה״כ מתנות צפויות</p>
+            <h3 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-slate-100 relative z-10">{fmt(totalExpectedGifts)}</h3>
+            
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 relative z-10">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">חלוקה לפי סבירות:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {probabilityBreakdown.map(({ prob, expectedGifts }) => (
+                  <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-900/20 border border-slate-200/50 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm transition-all cursor-pointer text-left group/btn">
+                    <span className="text-[10px] font-semibold text-slate-500 group-hover/btn:text-emerald-600 dark:group-hover/btn:text-emerald-400">{prob}%:</span>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover/btn:text-emerald-700 dark:group-hover/btn:text-emerald-300">{fmt(expectedGifts)}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
-
       </div>
 
-      {tasksTotal > 0 && (
-        <div className="rounded-3xl p-5 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">התקדמות מטלות</span>
+      {/* TIER 2: GUEST LOGISTICS & CASHFLOW */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Guest Overview */}
+        <div className="lg:col-span-2 rounded-[2rem] p-8 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">סטטוס מוזמנים</h3>
+            <div className="text-right flex items-end gap-2">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1">סה״כ הוזמנו:</p>
+              <p className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalInvited}</p>
             </div>
-            <span className="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full">{tasksDone}/{tasksTotal} מוכנים</span>
           </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 shadow-inner overflow-hidden relative">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${tasksTotal ? tasksDone / tasksTotal * 100 : 0}%` }}></div>
-            <div className="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[slide_1s_linear_infinite]" style={{ backgroundSize: '1rem 1rem' }}></div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 text-center">
+              <p className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{rsvpYesCount}</p>
+              <p className="text-[11px] text-emerald-800/70 dark:text-emerald-400 font-bold uppercase tracking-wider">אישרו ({Math.round(expectedAttendeesArriving)} יגיעו)</p>
+            </div>
+            <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-800/30 text-center">
+              <p className="text-3xl font-black text-amber-500 dark:text-amber-500 mb-1">{pendingCount}</p>
+              <p className="text-[11px] text-amber-800/70 dark:text-amber-400 font-bold uppercase tracking-wider">ממתינים ({Math.round(expectedAttendeesPending)} יגיעו)</p>
+            </div>
+            <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30 text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-full h-1 bg-indigo-500"></div>
+              <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mb-1">{Math.round(expectedAttendees)}</p>
+              <p className="text-[11px] text-indigo-800/70 dark:text-indigo-400 font-bold uppercase tracking-wider">צפי הגעה סופי</p>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+              <p className="text-3xl font-black text-slate-700 dark:text-slate-300 mb-1">{safeVenueCommitment}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">התחייבות אולם (90%)</p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">פילוח צפי הגעה:</p>
+            <div className="flex flex-wrap gap-2">
+              {probabilityBreakdown.map(({ prob, count }) => (
+                <button key={prob} onClick={() => setSelectedProbPopup(prob)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-slate-200 dark:border-slate-600 shadow-sm transition-all cursor-pointer">
+                  <span className="text-[11px] font-bold text-slate-500">{prob}%:</span>
+                  <span className="text-[11px] font-black text-indigo-600 dark:text-indigo-400">{count} אנשים</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
+        {/* Actionable Finance (BEP & Cashflow) */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Break Even Point */}
+          <div className="rounded-[2rem] p-6 bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-indigo-900/30 dark:to-blue-900/30 shadow-sm border border-indigo-100 dark:border-indigo-800/50 flex-1 flex flex-col justify-center">
+            <h3 className="text-sm font-extrabold text-indigo-900/60 dark:text-indigo-300 uppercase tracking-widest mb-1">ממוצע מתנה מול עלות מנה</h3>
+            <div className="flex items-end gap-3 mt-2">
+              <p className="text-4xl font-black text-indigo-700 dark:text-indigo-300">{fmt(Math.round(bepPerGuest))}</p>
+              <p className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mb-2">עלות מנה (נק&apos; איזון)</p>
+            </div>
+            
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between items-center text-sm font-medium">
+                <span className="text-indigo-900/70 dark:text-indigo-200/70">צפי מתנה ממוצע לאורח:</span>
+                <span className="font-bold text-indigo-800 dark:text-indigo-200">{fmt(Math.round(averageGiftExpected))}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-medium pt-2 border-t border-indigo-200/50 dark:border-indigo-700/50">
+                <span className="text-indigo-900/70 dark:text-indigo-200/70">הפרש:</span>
+                <span className={`font-black px-2 py-0.5 rounded-md ${bepComparison >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'}`}>
+                  {bepComparison >= 0 ? '+' : ''}{fmt(Math.round(bepComparison))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cashflow */}
+          <div className="rounded-[2rem] p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 flex-1 flex flex-col justify-center">
+            <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">תזרים תשלומים</h3>
+            <div className="space-y-4">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-4 shadow-inner overflow-hidden relative">
+                <div className="bg-emerald-500 h-4 rounded-full transition-all duration-1000 ease-out" style={{ width: `${expenseProgress}%` }}></div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">שולם מראש ({expenseProgress}%)</p>
+                  <p className="text-lg font-black text-slate-800 dark:text-slate-200">{fmt(totalOutOfPocket)}</p>
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] text-amber-500 dark:text-amber-400 font-bold uppercase">יתרה לתשלום</p>
+                  <p className="text-lg font-black text-amber-600 dark:text-amber-500">{fmt(totalBalanceDue)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* TIER 3: INSIGHTS & TASKS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div className="rounded-[2rem] p-8 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center gap-2 mb-6">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">פירוט הוצאות</h3>
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">פירוט הוצאות (לפי קטגוריות)</h3>
           </div>
           <DonutChart data={expensesByCategory} />
         </div>
-        <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-6">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">מאזן הוצאות מול מתנות</h3>
+
+        <div className="flex flex-col gap-6">
+          <div className="rounded-[2rem] p-8 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-300 hover:shadow-md flex-1">
+            <div className="flex items-center gap-2 mb-6">
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">מאזן הוצאות מול מתנות</h3>
+            </div>
+            <BarChart items={barItems} />
           </div>
-          <BarChart items={barItems} />
+
+          {tasksTotal > 0 && (
+            <div className="rounded-[2rem] p-6 bg-slate-50 dark:bg-slate-900/50 shadow-sm border border-slate-200/60 dark:border-slate-700/60">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-widest">התקדמות מטלות</span>
+                </div>
+                <span className="text-[11px] font-black bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-3 py-1 rounded-full">{tasksDone} / {tasksTotal} הושלמו</span>
+              </div>
+              <div className="w-full bg-white dark:bg-slate-800 rounded-full h-3 shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: `${tasksTotal ? tasksDone / tasksTotal * 100 : 0}%` }}></div>
+                <div className="absolute top-0 left-0 right-0 bottom-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[slide_1s_linear_infinite]" style={{ backgroundSize: '1rem 1rem' }}></div>
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
 
       {selectedProbPopup !== null && (
@@ -1008,7 +1036,7 @@ function Dashboard() {
       {editGuestPopup && (
         <GuestModal 
           guest={editGuestPopup} 
-          onSave={data => { updateGuest(editGuestPopup.id, data); setEditGuestPopup(null); }} 
+          onSave={data => { updateGuest(editGuestPopup?.id, data); setEditGuestPopup(null); }} 
           onClose={() => setEditGuestPopup(null)} 
         />
       )}
@@ -1842,7 +1870,7 @@ function Seating() {
       )}
 
       {tables.length === 0 ? (
-        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין שולחנות עדיין</p><p className="text-sm mt-1">לחץ "+ הוסף שולחן" כדי להתחיל</p></Card>
+        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין שולחנות עדיין</p><p className="text-sm mt-1">לחץ &quot;+ הוסף שולחן&quot; כדי להתחיל</p></Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {tables.map(t => {
@@ -2024,7 +2052,7 @@ function Ideas() {
                </a>
              )}
              <div className="mt-4 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-               נוצר ב-{new Date(idea.created_at || Date.now()).toLocaleDateString('he-IL')}
+               {idea.created_at ? `נוצר ב-${new Date(idea.created_at).toLocaleDateString('he-IL')}` : ''}
              </div>
           </div>
         ))}
