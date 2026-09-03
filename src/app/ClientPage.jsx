@@ -1053,7 +1053,7 @@ function Dashboard() {
 
 // ── Expenses ───────────────────────────────────────────────────────────────
 function ExpenseModal({ expense, onSave, onClose }) {
-  const blank = { name: '', category: 'אולם וקייטרינג', total_cost: '', deposit_paid: '' };
+  const blank = { name: '', category: 'אולם וקייטרינג', total_cost: '', deposit_paid: '', estimated: false };
   const [form, setForm] = useState(expense ? { ...expense } : blank);
   const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   const balanceDue = num(form.total_cost) - num(form.deposit_paid);
@@ -1065,6 +1065,10 @@ function ExpenseModal({ expense, onSave, onClose }) {
           <div className="col-span-2"><Field label="קטגוריה"><SelectInput name="category" value={form.category} onChange={set} options={EXPENSE_CATEGORIES} /></Field></div>
           <Field label="עלות כוללת (₪)"><TextInput name="total_cost" value={form.total_cost} onChange={set} type="number" min="0" required placeholder="0" /></Field>
           <Field label="מקדמה ששולמה (₪)"><TextInput name="deposit_paid" value={form.deposit_paid} onChange={set} type="number" min="0" required placeholder="0" /></Field>
+          <div className="col-span-2 flex items-center gap-2 mt-1">
+            <input type="checkbox" id="estimated" name="estimated" checked={form.estimated || false} onChange={e => setForm(p => ({ ...p, estimated: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+            <label htmlFor="estimated" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">הוצאה משוערת (המחיר אינו סופי)</label>
+          </div>
         </div>
         {form.total_cost !== '' && form.deposit_paid !== '' && (
           <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 rounded-xl px-4 py-2.5 text-sm">
@@ -1129,7 +1133,10 @@ function Expenses() {
               <div key={exp.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100">{exp.name}</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      {exp.name}
+                      {exp.estimated && <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1.5 py-0.5 rounded-md font-bold">משוער</span>}
+                    </h3>
                     <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category] || '#6366f1') + '20', color: CAT_COLORS[exp.category] || '#6366f1' }}>{exp.category}</span>
                   </div>
                   <div className="flex gap-1">
@@ -1162,7 +1169,12 @@ function Expenses() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {filteredExpenses.map(exp => (
                   <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{exp.name}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center gap-2">
+                        {exp.name}
+                        {exp.estimated && <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 px-1.5 py-0.5 rounded-md font-bold">משוער</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: (CAT_COLORS[exp.category] || '#6366f1') + '20', color: CAT_COLORS[exp.category] || '#6366f1' }}>{exp.category}</span>
                     </td>
