@@ -1914,7 +1914,6 @@ function Seating() {
 
   const [viewMode, setViewMode] = useState('map');
   const [zoom, setZoom] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [listWaitlistOpen, setListWaitlistOpen] = useState(false);
   const inspectorTable = tables.find(t => t.id === inspector);
 
@@ -2014,31 +2013,26 @@ function Seating() {
       {viewMode === 'map' && (
         <div className="flex flex-col xl:flex-row gap-4 h-[600px]">
           {/* Sidebar */}
-          <div className={`${sidebarOpen ? 'w-full xl:w-64' : 'w-auto'} flex-shrink-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 h-full overflow-y-auto transition-all`}>
-            <h3 className="font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between cursor-pointer group" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen && <span>ממתינים לשיבוץ</span>}
-              <div className="flex items-center gap-2" title="הסתר/הצג רשימה">
-                <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs">{unassigned.length}</span>
-                <span className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200">{sidebarOpen ? '▼' : '▶'}</span>
-              </div>
+          <div className="w-full xl:w-64 flex-shrink-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 h-full overflow-y-auto">
+            <h3 className="font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between">
+              <span>ממתינים לשיבוץ</span>
+              <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs">{unassigned.length}</span>
             </h3>
-            {sidebarOpen && (
-              <div className="space-y-2">
-                {unassigned.length === 0 ? (
-                  <div className="text-sm text-slate-500 text-center py-10">כולם שובצו בהצלחה! 🎉</div>
-                ) : (
-                  unassigned.map(g => (
-                    <div key={g.id}
-                         draggable
-                         onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('guestId', g.id); }}
-                         className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:scale-[1.02]">
-                      <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">{g.name}</div>
-                      <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">{g.group} • {g.side}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+            <div className="space-y-2">
+              {unassigned.length === 0 ? (
+                <div className="text-sm text-slate-500 text-center py-10">כולם שובצו בהצלחה! 🎉</div>
+              ) : (
+                unassigned.map(g => (
+                  <div key={g.id}
+                       draggable
+                       onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('guestId', g.id); }}
+                       className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:scale-[1.02]">
+                    <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">{g.name}</div>
+                    <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">{g.group} • {g.side}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Map Canvas */}
