@@ -1923,33 +1923,13 @@ function Seating() {
       const scrollEl = document.getElementById('map-scroll-container');
       if (scrollEl) {
         hasCenteredMap.current = true;
-        const rect = scrollEl.getBoundingClientRect();
-        let centerX = 1500;
-        let centerY = 1500;
-        if (tables.length > 0) {
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-          tables.forEach((t, i) => {
-            const cols = 4;
-            const defX = 40 + (i % cols) * 120;
-            const defY = 40 + Math.floor(i / cols) * 120;
-            const x = t.x ?? defX;
-            const y = t.y ?? defY;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          });
-          centerX = (minX + maxX) / 2 + 60;
-          centerY = (minY + maxY) / 2 + 60;
-        }
-        
         setTimeout(() => {
-           scrollEl.scrollLeft = centerX * zoom - rect.width / 2;
-           scrollEl.scrollTop = centerY * zoom - rect.height / 2;
+           scrollEl.scrollLeft = 0;
+           scrollEl.scrollTop = 0;
         }, 50);
       }
     }
-  }, [viewMode, tables, zoom]);
+  }, [viewMode]);
 
   return (
     <div className="space-y-6">
@@ -1999,7 +1979,7 @@ function Seating() {
                     <option value="" disabled>שבץ ▾</option>
                     {tables.filter(t => !['chuppah', 'dancefloor', 'bar', 'buffet'].includes(t.shape)).map(t => {
                       const free = num(t.capacity) - t.guest_ids.length;
-                      return <option key={t.id} value={t.id} disabled={free <= 0}>{t.name} ({free} מקום)</option>;
+                      return <option key={t.id} value={t.id}>{t.name} ({free} מקום)</option>;
                     })}
                   </select>
                 )}
