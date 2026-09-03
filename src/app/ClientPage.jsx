@@ -720,23 +720,72 @@ function HeroSection() {
 }
 
 function ProbabilityGuestsListModal({ prob, guests, deleteGuest, onEditGuest, onClose }) {
-  const filtered = guests.filter(g => (g.arrival_probability ?? 100) === prob && g.rsvp_status !== 'לא מגיע');
+  const [search, setSearch] = useState('');
+  const [sideFilter, setSideFilter] = useState('הכל');
+  const [groupFilter, setGroupFilter] = useState('הכל');
+
+  const baseGuests = guests.filter(g => (g.arrival_probability ?? 100) === prob && g.rsvp_status !== 'לא מגיע');
+  const sides = ['הכל', ...Array.from(new Set(baseGuests.map(g => g.side).filter(Boolean)))];
+  const groups = ['הכל', ...Array.from(new Set(baseGuests.map(g => g.group).filter(Boolean)))];
+
+  const filtered = baseGuests.filter(g => {
+    if (search && !g.name.includes(search)) return false;
+    if (sideFilter !== 'הכל' && g.side !== sideFilter) return false;
+    if (groupFilter !== 'הכל' && g.group !== groupFilter) return false;
+    return true;
+  });
+
   return (
     <Modal title={`אורחים בסבירות ${prob}%`} onClose={onClose}>
-      <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1">
-        {filtered.map(g => (
-          <div key={g.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-            <div>
-              <div className="font-bold text-sm text-slate-900 dark:text-slate-100">{g.name} <span className="font-normal text-slate-500">({g.party_size || 1})</span></div>
-              <div className="text-[10px] text-slate-500">{g.rsvp_status} • {fmt(g.estimated_gift)} מתנה</div>
+      <div className="flex flex-col gap-4">
+        {/* Filters and search */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input 
+            type="text" 
+            placeholder="חיפוש אורח..." 
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+          />
+          <select value={sideFilter} onChange={e => setSideFilter(e.target.value)} className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+            {sides.map(s => <option key={s} value={s}>{s === 'הכל' ? 'כל הצדדים' : s}</option>)}
+          </select>
+          <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+            {groups.map(s => <option key={s} value={s}>{s === 'הכל' ? 'כל הקבוצות' : s}</option>)}
+          </select>
+        </div>
+
+        {/* Guest List */}
+        <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-1 -mr-1">
+          {filtered.map(g => (
+            <div key={g.id} className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-md transition-all group">
+              <div>
+                <div className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  {g.name} 
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">{g.party_size || 1} {g.party_size > 1 ? 'אורחים' : 'אורח'}</span>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${g.rsvp_status === 'מגיע' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                  {g.rsvp_status} • {g.group} ({g.side}) • <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{fmt(g.estimated_gift)} מתנה צפויה</span>
+                </div>
+              </div>
+              <div className="flex gap-1.5 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onEditGuest(g)} className="px-2.5 py-1.5 text-[11px] font-bold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">✎ ערוך</button>
+                <button onClick={() => deleteGuest(g.id)} className="px-2.5 py-1.5 text-[11px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">✕ הסר</button>
+              </div>
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => onEditGuest(g)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-900 rounded shadow-sm border border-slate-200 dark:border-slate-600">✎</button>
-              <button onClick={() => deleteGuest(g.id)} className="p-1.5 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-900 rounded shadow-sm border border-slate-200 dark:border-slate-600">✕</button>
+          ))}
+          {filtered.length === 0 && (
+            <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-8 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+              לא מצאנו אורחים תואמים לסינון 🧐
             </div>
-          </div>
-        ))}
-        {filtered.length === 0 && <div className="text-center text-slate-500 text-sm py-4">אין אורחים בקבוצה זו.</div>}
+          )}
+        </div>
+        
+        <div className="flex justify-between items-center text-[11px] font-semibold text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+          <span>סה״כ {filtered.length} משפחות/זוגות</span>
+          <span>צפי הגעה: {filtered.reduce((s, g) => s + num(g.party_size || 1), 0)} מוזמנים</span>
+        </div>
       </div>
     </Modal>
   );
@@ -784,16 +833,16 @@ function Dashboard() {
             <p className={`text-sm mt-3 font-medium bg-white/40 dark:bg-black/20 inline-block px-3 py-1.5 rounded-lg ${isProfit ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
               {isProfit ? '✨ מצוין! נראה שתכסו את כל ההוצאות.' : `⚠️ זהירות, צפוי מחסור של ${fmt(Math.abs(netProfitLoss))}.`}
             </p>
-            <div className="mt-5 flex flex-col gap-2 pt-4 border-t border-emerald-200/30 dark:border-slate-700/50">
+            <div className={`mt-5 flex flex-col gap-2 pt-4 border-t ${isProfit ? 'border-emerald-200/50 dark:border-emerald-800/50' : 'border-rose-200/50 dark:border-rose-800/50'}`}>
               <div className="flex justify-between items-center text-sm font-medium">
-                <span className={isProfit ? 'text-emerald-800/70 dark:text-emerald-300/70' : 'text-rose-800/70 dark:text-rose-300/70'}>מבוסס רק על מאשרים:</span>
+                <span className={isProfit ? 'text-emerald-800/80 dark:text-emerald-300/80' : 'text-rose-800/80 dark:text-rose-300/80'}>מבוסס רק על מאשרים:</span>
                 <span className={netProfitLossArriving >= 0 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-rose-700 dark:text-rose-400 font-bold'}>
                   {netProfitLossArriving >= 0 ? '+' : ''}{fmt(netProfitLossArriving)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm font-medium">
-                <span className={isProfit ? 'text-emerald-800/70 dark:text-emerald-300/70' : 'text-rose-800/70 dark:text-rose-300/70'}>תוספת פוטנציאלית מממתינים (משוקלל):</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                <span className={isProfit ? 'text-emerald-800/80 dark:text-emerald-300/80' : 'text-rose-800/80 dark:text-rose-300/80'}>תוספת פוטנציאלית מממתינים (משוקלל):</span>
+                <span className={isProfit ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-rose-700 dark:text-rose-400 font-bold'}>
                   +{fmt(expectedGiftsPending)}
                 </span>
               </div>
