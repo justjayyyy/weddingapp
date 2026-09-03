@@ -159,6 +159,7 @@ function AppProvider({ children }) {
   const [tasks, setTasks] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [tables, setTables] = useState([]);
+  const [timeline, setTimeline] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const [weddingDate, setWeddingDate] = useState(null);
   const [toasts, setToasts] = useState([]);
@@ -200,6 +201,7 @@ function AppProvider({ children }) {
         if (p.tasks) setTasks(p.tasks);
         if (p.vendors) setVendors(p.vendors);
         if (p.tables) setTables(p.tables);
+        if (p.timeline) setTimeline(p.timeline);
         if (p.ideas) setIdeas(p.ideas);
         if (p.weddingDate) setWeddingDate(p.weddingDate);
         setLoadError(false);
@@ -223,7 +225,7 @@ function AppProvider({ children }) {
     setSaveStatus('saving');
     const t = setTimeout(async () => {
       try {
-        await persistWeddingData({ expenses, guests, tasks, vendors, tables, ideas, weddingDate });
+        await persistWeddingData({ expenses, guests, tasks, vendors, tables, ideas, weddingDate, timeline });
         if (gen !== saveGen.current) return;
         setSaveStatus('saved');
       } catch {
@@ -232,7 +234,7 @@ function AppProvider({ children }) {
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [expenses, guests, tasks, vendors, tables, ideas, weddingDate, ready, loadError]);
+  }, [expenses, guests, tasks, vendors, tables, ideas, weddingDate, timeline, ready, loadError]);
 
   const addExpense = (d) => { setExpenses(p => [...p, { ...d, id: uid(), total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) }]); addToast('הוצאה נוספה בהצלחה'); };
   const updateExpense = (id, d) => { setExpenses(p => p.map(e => e.id === id ? { ...e, ...d, total_cost: num(d.total_cost), deposit_paid: num(d.deposit_paid) } : e)); addToast('הוצאה עודכנה'); };
@@ -279,6 +281,10 @@ function AppProvider({ children }) {
   const addIdea = (d) => { setIdeas(p => [{ ...d, id: uid(), created_at: new Date().toISOString() }, ...p]); addToast('רעיון נוסף בהצלחה'); };
   const updateIdea = (id, d) => { setIdeas(p => p.map(i => i.id === id ? { ...i, ...d } : i)); addToast('רעיון עודכן'); };
   const deleteIdea = (id) => { setIdeas(p => p.filter(i => i.id !== id)); addToast('רעיון נמחק'); };
+
+  const addTimelineEvent = (d) => { setTimeline(p => [...p, { ...d, id: uid() }]); addToast('אירוע נוסף בהצלחה'); };
+  const updateTimelineEvent = (id, d) => { setTimeline(p => p.map(i => i.id === id ? { ...i, ...d } : i)); addToast('אירוע עודכן'); };
+  const deleteTimelineEvent = (id) => { setTimeline(p => p.filter(i => i.id !== id)); addToast('אירוע נמחק'); };
 
   const metrics = useMemo(() => {
     const totalExpenses = expenses.reduce((s, e) => s + num(e.total_cost), 0);
@@ -371,7 +377,7 @@ function AppProvider({ children }) {
   }
 
   const value = {
-    expenses, guests, tasks, vendors, tables, ideas, weddingDate, setWeddingDate, metrics,
+    expenses, guests, tasks, vendors, tables, ideas, weddingDate, setWeddingDate, metrics, timeline,
     privacyMode, togglePrivacyMode,
     addExpense, updateExpense, deleteExpense,
     addGuest, addMultipleGuests, updateGuest, deleteGuest,
@@ -379,6 +385,7 @@ function AppProvider({ children }) {
     addVendor, updateVendor, deleteVendor,
     addTable, updateTable, deleteTable, assignGuest, unassignGuest,
     addIdea, updateIdea, deleteIdea,
+    addTimelineEvent, updateTimelineEvent, deleteTimelineEvent,
     saveStatus,
     toasts, addToast, confirm: confirmDialog, confirmState, handleConfirm,
   };
@@ -1801,14 +1808,19 @@ function Vendors() {
 
 // ── Seating ────────────────────────────────────────────────────────────────
 function TableModal({ table, onSave, onClose }) {
-  const blank = { name: '', capacity: 10 };
-  const [form, setForm] = useState(table ? { name: table.name, capacity: table.capacity } : blank);
+  const blank = { name: '', capacity: 10, shape: 'round' };
+  const [form, setForm] = useState(table ? { name: table.name, capacity: table.capacity, shape: table.shape || 'round' } : blank);
   const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   return (
     <Modal title={table ? 'ערוך שולחן' : 'הוסף שולחן'} onClose={onClose}>
       <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-4">
         <Field label="שם השולחן"><TextInput name="name" value={form.name} onChange={set} required placeholder="לדוגמה: שולחן 1 — משפחה" /></Field>
-        <Field label="קיבולת (מספר מקומות)"><TextInput name="capacity" value={form.capacity} onChange={set} type="number" min="1" required /></Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="קיבולת (מספר מקומות)"><TextInput name="capacity" value={form.capacity} onChange={set} type="number" min="1" required /></Field>
+          <Field label="צורת השולחן">
+            <SelectInput name="shape" value={form.shape} onChange={set} options={['round', 'rect']} />
+          </Field>
+        </div>
         <div className="flex gap-2 justify-end pt-1">
           <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
           <Btn type="submit">{table ? 'שמור שינויים' : 'הוסף שולחן'}</Btn>
@@ -1827,12 +1839,20 @@ function Seating() {
   const unassigned = guests.filter(g => g.rsvp_status === 'מגיע' && !assignedIds.has(g.id));
   const totalSeats = tables.reduce((s, t) => s + num(t.capacity), 0);
 
+  const [viewMode, setViewMode] = useState('list');
+
   return (
     <div className="space-y-6">
       {modal && <TableModal table={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">סידורי ישיבה</h2>
-        <Btn onClick={() => setModal('new')}>+ הוסף שולחן</Btn>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>רשימה</button>
+            <button onClick={() => setViewMode('map')} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'map' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>מפה חכמה</button>
+          </div>
+          <Btn onClick={() => setModal('new')}>+ הוסף שולחן</Btn>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -1864,11 +1884,57 @@ function Seating() {
         </Card>
       )}
 
-      {tables.length === 0 ? (
-        <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין שולחנות עדיין</p><p className="text-sm mt-1">לחץ &quot;+ הוסף שולחן&quot; כדי להתחיל</p></Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {tables.map(t => {
+      {viewMode === 'map' && (
+        <div className="relative w-full h-[600px] bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner" 
+             onDragOver={e => e.preventDefault()} 
+             onDrop={e => {
+               e.preventDefault();
+               const tableId = e.dataTransfer.getData('text/plain');
+               if (!tableId) return;
+               const rect = e.currentTarget.getBoundingClientRect();
+               const x = e.clientX - rect.left - 40; // 40 is approx half width
+               const y = e.clientY - rect.top - 40;
+               // Ensure within bounds
+               const boundedX = Math.max(0, Math.min(rect.width - 80, x));
+               const boundedY = Math.max(0, Math.min(rect.height - 80, y));
+               updateTable(tableId, { x: boundedX, y: boundedY });
+             }}>
+          <div className="absolute top-4 left-4 text-xs font-semibold text-slate-400 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none">
+            גרור שולחנות כדי לעצב את מפת האולם
+          </div>
+          {tables.map((t, index) => {
+            const seatedCount = t.guest_ids.length;
+            const isFull = seatedCount >= num(t.capacity);
+            // Distribute default positions in a grid-like manner if no x/y
+            const cols = 4;
+            const defX = 40 + (index % cols) * 120;
+            const defY = 40 + Math.floor(index / cols) * 120;
+            const px = t.x ?? defX;
+            const py = t.y ?? defY;
+            const isRect = t.shape === 'rect';
+            
+            return (
+              <div key={t.id}
+                   draggable
+                   onDragStart={e => e.dataTransfer.setData('text/plain', t.id)}
+                   onDoubleClick={() => setModal(t)}
+                   style={{ left: px, top: py, position: 'absolute' }}
+                   className={`${isRect ? 'w-24 h-16 rounded-xl' : 'w-20 h-20 rounded-full'} flex flex-col items-center justify-center cursor-move shadow-md transition-shadow hover:shadow-lg border-4 ${isFull ? 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-100' : 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'}`}>
+                <span className="text-[10px] font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
+                <span className="text-[10px] opacity-70 mt-0.5 pointer-events-none">{seatedCount}/{t.capacity}</span>
+              </div>
+            );
+          })}
+          {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium">הוסף שולחן כדי להתחיל במיפוי</div>}
+        </div>
+      )}
+
+      {viewMode === 'list' && (
+        tables.length === 0 ? (
+          <Card className="p-12 text-center text-gray-300"><p className="text-lg font-medium">אין שולחנות עדיין</p><p className="text-sm mt-1">לחץ &quot;+ הוסף שולחן&quot; כדי להתחיל</p></Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {tables.map(t => {
             const seated = t.guest_ids.map(id => guests.find(g => g.id === id)).filter(Boolean);
             const free = num(t.capacity) - seated.length;
             const isFull = free <= 0;
@@ -1901,7 +1967,8 @@ function Seating() {
               </Card>
             );
           })}
-        </div>
+          </div>
+        )
       )}
     </div>
   );
@@ -2056,6 +2123,87 @@ function Ideas() {
   );
 }
 
+// ── Timeline ───────────────────────────────────────────────────────────────
+function TimelineModal({ event, onSave, onClose }) {
+  const blank = { time: '10:00', title: '', description: '', assignee: '' };
+  const [form, setForm] = useState(event ? { ...event } : blank);
+  const set = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  return (
+    <Modal title={event ? 'ערוך אירוע בלו״ז' : 'הוסף אירוע ללו״ז'} onClose={onClose}>
+      <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="שעה (לדוגמה 10:00)"><TextInput name="time" type="time" value={form.time} onChange={set} required /></Field>
+          <Field label="כותרת (לדוגמה: איפור ושיער)"><TextInput name="title" value={form.title} onChange={set} required /></Field>
+          <div className="col-span-2"><Field label="תיאור (אופציונלי, למשל: בחדר במלון)"><TextInput name="description" value={form.description} onChange={set} /></Field></div>
+          <div className="col-span-2"><Field label="אחראי (אופציונלי, למשל: חתן, מלווה)"><TextInput name="assignee" value={form.assignee} onChange={set} /></Field></div>
+        </div>
+        <div className="flex gap-2 justify-end pt-2">
+          <Btn variant="secondary" onClick={onClose}>ביטול</Btn>
+          <Btn type="submit">{event ? 'שמור שינויים' : 'הוסף אירוע'}</Btn>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function Timeline() {
+  const { timeline, addTimelineEvent, updateTimelineEvent, deleteTimelineEvent, confirm } = useApp();
+  const [modal, setModal] = useState(null);
+
+  const sortedTimeline = [...timeline].sort((a, b) => a.time.localeCompare(b.time));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+          לוח זמנים ליום האירוע ⏱️
+        </h2>
+        <Btn onClick={() => setModal({})}>+ אירוע ללו״ז</Btn>
+      </div>
+
+      <div className="relative border-r-2 border-indigo-200 dark:border-indigo-900/50 mr-4 pr-6 space-y-6">
+        {sortedTimeline.length === 0 && (
+          <div className="text-slate-400 py-10 text-center text-sm bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+            הלו״ז שלך עדיין ריק.<br />לחץ על &quot;+ אירוע ללו״ז&quot; כדי להתחיל.
+          </div>
+        )}
+        {sortedTimeline.map((ev, i) => (
+          <div key={ev.id} className="relative group">
+            <div className="absolute -right-[33px] top-1.5 w-4 h-4 rounded-full bg-indigo-500 border-4 border-white dark:border-slate-900 shadow-sm"></div>
+            <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tight">{ev.time}</span>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{ev.title}</h3>
+                  </div>
+                  {ev.description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{ev.description}</p>}
+                  {ev.assignee && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2">
+                      👤 {ev.assignee}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setModal(ev)} className="text-slate-400 hover:text-indigo-600 transition-colors p-1" title="ערוך">✎</button>
+                  <button onClick={() => confirm('למחוק אירוע זה?').then(y => y && deleteTimelineEvent(ev.id))} className="text-slate-400 hover:text-rose-600 transition-colors p-1" title="מחק">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {modal && (
+        <TimelineModal 
+          event={modal.id ? modal : null} 
+          onSave={data => { modal.id ? updateTimelineEvent(modal.id, data) : addTimelineEvent(data); setModal(null); }} 
+          onClose={() => setModal(null)} 
+        />
+      )}
+    </div>
+  );
+}
+
 // ── App shell ──────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'dashboard', label: 'לוח בקרה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg> },
@@ -2064,6 +2212,7 @@ const TABS = [
   { id: 'checklist', label: 'מטלות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
   { id: 'vendors', label: 'ספקים', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg> },
   { id: 'seating', label: 'ישיבה', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="M5 5l1.5 1.5" /><path d="M17.5 17.5L19 19" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="M5 19l1.5-1.5" /><path d="M17.5 6.5L19 5" /></svg> },
+  { id: 'timeline', label: 'לו״ז', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
   { id: 'ideas', label: 'רעיונות', icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21h6" /><path d="M12 17v4" /><path d="M12 2a5.5 5.5 0 0 0-4.7 8.3 4 4 0 0 1 1.7 3.7V17h6v-3a4 4 0 0 1 1.7-3.7A5.5 5.5 0 0 0 12 2Z" /></svg> },
 ];
 
@@ -2127,6 +2276,7 @@ function App() {
             {tab === 'checklist' && <Checklist />}
             {tab === 'vendors' && <Vendors />}
             {tab === 'seating' && <Seating />}
+            {tab === 'timeline' && <Timeline />}
             {tab === 'ideas' && <Ideas />}
           </main>
 
