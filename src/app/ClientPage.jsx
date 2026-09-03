@@ -1901,8 +1901,8 @@ function Seating() {
 
   const [viewMode, setViewMode] = useState('map');
   const [zoom, setZoom] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [listWaitlistOpen, setListWaitlistOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [listWaitlistOpen, setListWaitlistOpen] = useState(false);
   const inspectorTable = tables.find(t => t.id === inspector);
 
   return (
