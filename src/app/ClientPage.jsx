@@ -593,7 +593,12 @@ function SelectInput({ name, value, onChange, options }) {
   return (
     <select name={name} value={value || ''} onChange={handleSelect}
       className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
-      {allOptions.map(o => <option key={o} value={o}>{o}</option>)}
+      {allOptions.map(o => {
+        const isObj = typeof o === 'object' && o !== null;
+        const val = isObj ? o.value : o;
+        const lbl = isObj ? o.label : o;
+        return <option key={val} value={val}>{lbl}</option>;
+      })}
       <option disabled>──────────</option>
       <option value="__add_new__" className="font-bold text-indigo-600 dark:text-indigo-400">+ הוסף חדש...</option>
     </select>
@@ -1816,9 +1821,16 @@ function TableModal({ table, onSave, onClose }) {
       <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-4">
         <Field label="שם השולחן"><TextInput name="name" value={form.name} onChange={set} required placeholder="לדוגמה: שולחן 1 — משפחה" /></Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="קיבולת (מספר מקומות)"><TextInput name="capacity" value={form.capacity} onChange={set} type="number" min="1" required /></Field>
-          <Field label="צורת השולחן">
-            <SelectInput name="shape" value={form.shape} onChange={set} options={['round', 'rect']} />
+          <Field label="קיבולת (מספר מקומות)"><TextInput name="capacity" value={form.capacity} onChange={set} type="number" min="0" required /></Field>
+          <Field label="צורת השולחן / סוג האלמנט">
+            <SelectInput name="shape" value={form.shape} onChange={set} options={[
+              { value: 'round', label: 'שולחן עגול' },
+              { value: 'rect', label: 'שולחן מלבני' },
+              { value: 'chuppah', label: 'חופה 🏕️' },
+              { value: 'dancefloor', label: 'רחבת ריקודים 🪩' },
+              { value: 'bar', label: 'בר משקאות 🍸' },
+              { value: 'buffet', label: 'מזנון 🍽️' }
+            ]} />
           </Field>
         </div>
         <div className="flex gap-2 justify-end pt-1">
@@ -1830,9 +1842,47 @@ function TableModal({ table, onSave, onClose }) {
   );
 }
 
+function TableInspectorModal({ table, onClose, onEdit, onDelete, onUnassign, guestsList }) {
+  const seated = table.guest_ids.map(id => guestsList.find(g => g.id === id)).filter(Boolean);
+  const isMapEl = ['chuppah', 'dancefloor', 'bar', 'buffet'].includes(table.shape);
+  const free = num(table.capacity) - seated.length;
+  
+  return (
+    <Modal title={table.name} onClose={onClose}>
+      <div className="space-y-6">
+        {!isMapEl && (
+          <div className="grid grid-cols-2 gap-4 mb-4">
+             <KpiCard title="יושבים" value={seated.length} color="indigo" />
+             <KpiCard title="פנוי" value={free} color={free < 0 ? 'red' : 'green'} />
+          </div>
+        )}
+
+        {!isMapEl && seated.length > 0 && (
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+            <h4 className="font-semibold text-sm text-slate-500">רשימת אורחים ({seated.length}):</h4>
+            {seated.map(g => (
+              <div key={g.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 rounded-xl px-4 py-2 border border-slate-100 dark:border-slate-700">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{g.name}</span>
+                <button onClick={() => onUnassign(g.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="הסר מהשולחן">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {!isMapEl && seated.length === 0 && <div className="text-center text-sm text-slate-400 py-4">השולחן ריק</div>}
+
+        <div className="flex gap-2 justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+          <Btn variant="danger" onClick={onDelete}>מחק {isMapEl ? 'אלמנט' : 'שולחן'}</Btn>
+          <Btn variant="secondary" onClick={onEdit}>ערוך פרטים</Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function Seating() {
   const { guests, tables, addTable, updateTable, deleteTable, assignGuest, unassignGuest, confirm } = useApp();
   const [modal, setModal] = useState(null);
+  const [inspector, setInspector] = useState(null);
   const handleSave = (data) => { if (modal === 'new') addTable(data); else updateTable(modal.id, data); setModal(null); };
 
   const assignedIds = new Set(tables.flatMap(t => t.guest_ids));
@@ -1844,6 +1894,16 @@ function Seating() {
   return (
     <div className="space-y-6">
       {modal && <TableModal table={modal === 'new' ? null : modal} onSave={handleSave} onClose={() => setModal(null)} />}
+      {inspector && (
+        <TableInspectorModal 
+          table={inspector}
+          guestsList={guests}
+          onClose={() => setInspector(null)}
+          onEdit={() => { setModal(inspector); setInspector(null); }}
+          onDelete={() => { confirm(`למחוק את ${inspector.name}?`).then(y => { if(y){ deleteTable(inspector.id); setInspector(null); } }) }}
+          onUnassign={assignGuest ? (id) => unassignGuest(id) : null}
+        />
+      )}
       <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">סידורי ישיבה</h2>
         <div className="flex items-center gap-3">
@@ -1885,47 +1945,106 @@ function Seating() {
       )}
 
       {viewMode === 'map' && (
-        <div className="relative w-full h-[600px] bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner" 
-             onDragOver={e => e.preventDefault()} 
-             onDrop={e => {
-               e.preventDefault();
-               const tableId = e.dataTransfer.getData('text/plain');
-               if (!tableId) return;
-               const rect = e.currentTarget.getBoundingClientRect();
-               const x = e.clientX - rect.left - 40; // 40 is approx half width
-               const y = e.clientY - rect.top - 40;
-               // Ensure within bounds
-               const boundedX = Math.max(0, Math.min(rect.width - 80, x));
-               const boundedY = Math.max(0, Math.min(rect.height - 80, y));
-               updateTable(tableId, { x: boundedX, y: boundedY });
-             }}>
-          <div className="absolute top-4 left-4 text-xs font-semibold text-slate-400 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-full backdrop-blur-sm pointer-events-none">
-            גרור שולחנות כדי לעצב את מפת האולם
+        <div className="flex flex-col xl:flex-row gap-4 h-[600px]">
+          {/* Sidebar */}
+          <div className="w-full xl:w-64 flex-shrink-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 h-full overflow-y-auto">
+            <h3 className="font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between">
+              <span>ממתינים לשיבוץ</span>
+              <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs">{unassigned.length}</span>
+            </h3>
+            <div className="space-y-2">
+              {unassigned.length === 0 ? (
+                <div className="text-sm text-slate-500 text-center py-10">כולם שובצו בהצלחה! 🎉</div>
+              ) : (
+                unassigned.map(g => (
+                  <div key={g.id}
+                       draggable
+                       onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('guestId', g.id); }}
+                       className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:scale-[1.02]">
+                    <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">{g.name}</div>
+                    <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">{g.group} • {g.side}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          {tables.map((t, index) => {
-            const seatedCount = t.guest_ids.length;
-            const isFull = seatedCount >= num(t.capacity);
-            // Distribute default positions in a grid-like manner if no x/y
-            const cols = 4;
-            const defX = 40 + (index % cols) * 120;
-            const defY = 40 + Math.floor(index / cols) * 120;
-            const px = t.x ?? defX;
-            const py = t.y ?? defY;
-            const isRect = t.shape === 'rect';
+
+          {/* Map Canvas */}
+          <div className="relative flex-grow h-full bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]"
+               onDragOver={e => e.preventDefault()} 
+               onDrop={e => {
+                 e.preventDefault();
+                 const guestId = e.dataTransfer.getData('guestId');
+                 if (guestId) { unassignGuest(guestId); return; }
+                 
+                 const tableId = e.dataTransfer.getData('tableId');
+                 if (tableId) {
+                   const rect = e.currentTarget.getBoundingClientRect();
+                   const x = e.clientX - rect.left - 40; 
+                   const y = e.clientY - rect.top - 40;
+                   const boundedX = Math.max(0, Math.min(rect.width - 80, x));
+                   const boundedY = Math.max(0, Math.min(rect.height - 80, y));
+                   updateTable(tableId, { x: boundedX, y: boundedY });
+                 }
+               }}>
+            <div className="absolute top-4 left-4 text-xs font-semibold text-slate-500 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm pointer-events-none z-10">
+              💡 גרור אנשים לשולחנות, או לחיצה אחת על שולחן לעריכה
+            </div>
             
-            return (
-              <div key={t.id}
-                   draggable
-                   onDragStart={e => e.dataTransfer.setData('text/plain', t.id)}
-                   onDoubleClick={() => setModal(t)}
-                   style={{ left: px, top: py, position: 'absolute' }}
-                   className={`${isRect ? 'w-24 h-16 rounded-xl' : 'w-20 h-20 rounded-full'} flex flex-col items-center justify-center cursor-move shadow-md transition-shadow hover:shadow-lg border-4 ${isFull ? 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-100' : 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'}`}>
-                <span className="text-[10px] font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
-                <span className="text-[10px] opacity-70 mt-0.5 pointer-events-none">{seatedCount}/{t.capacity}</span>
-              </div>
-            );
-          })}
-          {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium">הוסף שולחן כדי להתחיל במיפוי</div>}
+            {tables.map((t, index) => {
+              const seatedCount = t.guest_ids.length;
+              const isFull = seatedCount >= num(t.capacity);
+              const cols = 4;
+              const defX = 40 + (index % cols) * 120;
+              const defY = 40 + Math.floor(index / cols) * 120;
+              const px = t.x ?? defX;
+              const py = t.y ?? defY;
+              const isRect = t.shape === 'rect';
+              const isMapEl = ['chuppah', 'dancefloor', 'bar', 'buffet'].includes(t.shape);
+              
+              if (isMapEl) {
+                 const icons = { chuppah: '🏕️', dancefloor: '🪩', bar: '🍸', buffet: '🍽️' };
+                 return (
+                   <div key={t.id}
+                        draggable
+                        onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('tableId', t.id); }}
+                        onClick={() => setInspector(t)}
+                        style={{ left: px, top: py, position: 'absolute' }}
+                        className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center cursor-move shadow-lg transition-all hover:shadow-xl hover:scale-105 border-2 border-slate-300 dark:border-slate-600 bg-gradient-to-br from-white to-slate-100 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-200 z-0">
+                     <span className="text-4xl mb-2 pointer-events-none drop-shadow-sm">{icons[t.shape]}</span>
+                     <span className="text-xs font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
+                   </div>
+                 );
+              }
+              
+              return (
+                <div key={t.id}
+                     draggable
+                     onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('tableId', t.id); }}
+                     onDragOver={e => e.preventDefault()}
+                     onDrop={e => {
+                        e.preventDefault();
+                        e.stopPropagation(); 
+                        const guestId = e.dataTransfer.getData('guestId');
+                        if (guestId) assignGuest(guestId, t.id);
+                        const tableId = e.dataTransfer.getData('tableId');
+                        if (tableId) {
+                           const rect = e.currentTarget.parentElement.getBoundingClientRect();
+                           const x = e.clientX - rect.left - 40; 
+                           const y = e.clientY - rect.top - 40;
+                           updateTable(tableId, { x, y });
+                        }
+                     }}
+                     onClick={() => setInspector(t)}
+                     style={{ left: px, top: py, position: 'absolute' }}
+                     className={`${isRect ? 'w-28 h-16 rounded-xl' : 'w-24 h-24 rounded-full'} flex flex-col items-center justify-center cursor-move shadow-md transition-all hover:shadow-lg hover:scale-105 border-4 z-10 ${isFull ? 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-100' : 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'}`}>
+                  <span className="text-xs font-bold text-center leading-tight truncate w-[90%] pointer-events-none">{t.name}</span>
+                  <span className="text-[10px] font-medium opacity-80 mt-1 pointer-events-none">{seatedCount}/{t.capacity}</span>
+                </div>
+              );
+            })}
+            {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium z-0">הוסף שולחן או רחבה כדי להתחיל</div>}
+          </div>
         </div>
       )}
 
