@@ -1893,7 +1893,20 @@ function Seating() {
   const { guests, tables, addTable, updateTable, deleteTable, assignGuest, unassignGuest, confirm } = useApp();
   const [modal, setModal] = useState(null);
   const [inspector, setInspector] = useState(null);
-  const handleSave = (data) => { if (modal === 'new') addTable(data); else updateTable(modal.id, data); setModal(null); };
+  const handleSave = (data) => { 
+    if (modal === 'new') {
+      const scrollEl = document.getElementById('map-scroll-container');
+      if (scrollEl && viewMode === 'map') {
+        const rect = scrollEl.getBoundingClientRect();
+        data.x = (scrollEl.scrollLeft + rect.width / 2) / zoom - 60;
+        data.y = (scrollEl.scrollTop + rect.height / 2) / zoom - 60;
+      }
+      addTable(data);
+    } else {
+      updateTable(modal.id, data);
+    }
+    setModal(null);
+  };
 
   const assignedIds = new Set(tables.flatMap(t => t.guest_ids));
   const unassigned = guests.filter(g => g.rsvp_status === 'מגיע' && !assignedIds.has(g.id));
@@ -2006,7 +2019,7 @@ function Seating() {
               <button onClick={() => setZoom(p => Math.min(2, p + 0.1))} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full font-bold text-lg">+</button>
             </div>
 
-            <div className="w-full h-full overflow-auto custom-scrollbar relative"
+            <div id="map-scroll-container" className="w-full h-full overflow-auto custom-scrollbar relative"
                  onDragOver={e => e.preventDefault()} 
                  onDrop={e => {
                    e.preventDefault();
