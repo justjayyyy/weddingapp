@@ -164,14 +164,9 @@ function AppProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
   const [privacyMode, setPrivacyModeState] = useState(true);
-
-  useEffect(() => {
-    const saved = load('wfgm_privacy', true);
-    if (saved !== true) {
-      PRIVACY_MODE = saved;
-      setPrivacyModeState(saved);
-    }
-  }, []);
+  
+  // Privacy mode is always true by default on entry
+  // PRIVACY_MODE is initialized to true globally.
 
   const togglePrivacyMode = () => {
     const newVal = !privacyMode;
