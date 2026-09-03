@@ -296,15 +296,28 @@ function AppProvider({ children }) {
     const pending = guests.filter(g => g.rsvp_status === 'ממתין');
     const rsvpYesCount = attending.reduce((s, g) => s + num(g.party_size || 1), 0);
     const pendingCount = pending.reduce((s, g) => s + num(g.party_size || 1), 0);
-    const expectedAttendees = guests.reduce((sum, g) => {
+    const expectedAttendeesArriving = guests.reduce((sum, g) => {
       if (g.rsvp_status !== 'מגיע') return sum;
       return sum + (num(g.party_size || 1) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
+    const expectedAttendeesPending = guests.reduce((sum, g) => {
+      if (g.rsvp_status !== 'ממתין') return sum;
+      return sum + (num(g.party_size || 1) * ((g.arrival_probability ?? 100) / 100));
+    }, 0);
+    const expectedAttendees = expectedAttendeesArriving + expectedAttendeesPending;
+
     const safeVenueCommitment = Math.floor(expectedAttendees * 0.9);
-    const totalExpectedGifts = guests.reduce((sum, g) => {
+
+    const expectedGiftsArriving = guests.reduce((sum, g) => {
       if (g.rsvp_status !== 'מגיע') return sum;
       return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
     }, 0);
+    const expectedGiftsPending = guests.reduce((sum, g) => {
+      if (g.rsvp_status !== 'ממתין') return sum;
+      return sum + (num(g.estimated_gift) * ((g.arrival_probability ?? 100) / 100));
+    }, 0);
+    const totalExpectedGifts = expectedGiftsArriving + expectedGiftsPending;
+    
     const totalActualGifts = guests.reduce((s, g) => s + num(g.actual_gift), 0);
 
     const bepPerGuest = safeVenueCommitment > 0 ? totalExpensesWithBuffer / safeVenueCommitment : 0;
@@ -321,7 +334,8 @@ function AppProvider({ children }) {
       totalExpenses, totalOutOfPocket, totalBalanceDue,
       contingencyBuffer, totalExpensesWithBuffer,
       rsvpYesCount, pendingCount, totalInvited: guests.reduce((s, g) => s + num(g.party_size || 1), 0),
-      expectedAttendees, safeVenueCommitment, totalExpectedGifts, totalActualGifts,
+      expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending, safeVenueCommitment, 
+      totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, totalActualGifts,
       bepPerGuest, netProfitLoss, expensesByCategory,
       tasksDone, tasksTotal,
     };
@@ -694,7 +708,8 @@ function HeroSection() {
 function Dashboard() {
   const { metrics } = useApp();
   const { totalExpensesWithBuffer, contingencyBuffer, totalOutOfPocket, totalBalanceDue,
-    totalExpectedGifts, rsvpYesCount, pendingCount, safeVenueCommitment, expectedAttendees,
+    totalExpectedGifts, expectedGiftsArriving, expectedGiftsPending, rsvpYesCount, pendingCount, safeVenueCommitment, 
+    expectedAttendees, expectedAttendeesArriving, expectedAttendeesPending,
     totalInvited, bepPerGuest, netProfitLoss, expensesByCategory, tasksDone, tasksTotal } = metrics;
 
   const barItems = [
@@ -744,12 +759,24 @@ function Dashboard() {
 
         {/* Gifts Summary */}
         <div className="rounded-3xl p-6 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">מתנות צפויות</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">סה״כ מתנות צפויות</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{fmt(totalExpectedGifts)}</h3>
-          <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
-            מבוסס על {rsvpYesCount + pendingCount} אורחים פוטנציאליים
-          </p>
+          <div className="mt-3 space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex justify-between items-center text-xs">
+              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                אישרו הגעה:
+              </span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(expectedGiftsArriving)}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                ממתינים <span className="text-[10px] opacity-70">(משוקלל)</span>:
+              </span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{fmt(expectedGiftsPending)}</span>
+            </div>
+          </div>
         </div>
 
         {/* Guest Overview - Spans 2 cols on Desktop/Tablet */}
@@ -767,15 +794,15 @@ function Dashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-2 text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
             <div>
               <p className="text-2xl font-bold text-emerald-600">{rsvpYesCount}</p>
-              <p className="text-[10px] text-slate-500 font-medium">אישרו</p>
+              <p className="text-[10px] text-slate-500 font-medium">אישרו ({Math.round(expectedAttendeesArriving)} יגיעו)</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-amber-500">{pendingCount}</p>
-              <p className="text-[10px] text-slate-500 font-medium">ממתינים</p>
+              <p className="text-[10px] text-slate-500 font-medium">ממתינים ({Math.round(expectedAttendeesPending)} יגיעו)</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-blue-600">{Math.round(expectedAttendees)}</p>
-              <p className="text-[10px] text-slate-500 font-medium">צפי הגעה</p>
+              <p className="text-[10px] text-slate-500 font-medium">סה״כ צפי הגעה</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-indigo-600">{safeVenueCommitment}</p>
