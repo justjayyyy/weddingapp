@@ -1899,8 +1899,9 @@ function Seating() {
   const unassigned = guests.filter(g => g.rsvp_status === 'מגיע' && !assignedIds.has(g.id));
   const totalSeats = tables.reduce((s, t) => s + num(t.capacity), 0);
 
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState('map');
   const [zoom, setZoom] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const inspectorTable = tables.find(t => t.id === inspector);
 
   return (
@@ -1960,47 +1961,35 @@ function Seating() {
       {viewMode === 'map' && (
         <div className="flex flex-col xl:flex-row gap-4 h-[600px]">
           {/* Sidebar */}
-          <div className="w-full xl:w-64 flex-shrink-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 h-full overflow-y-auto">
-            <h3 className="font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between">
-              <span>ממתינים לשיבוץ</span>
-              <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs">{unassigned.length}</span>
+          <div className={`${sidebarOpen ? 'w-full xl:w-64' : 'w-auto'} flex-shrink-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 h-full overflow-y-auto transition-all`}>
+            <h3 className="font-bold mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between cursor-pointer group" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              {sidebarOpen && <span>ממתינים לשיבוץ</span>}
+              <div className="flex items-center gap-2" title="הסתר/הצג רשימה">
+                <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs">{unassigned.length}</span>
+                <span className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200">{sidebarOpen ? '▼' : '▶'}</span>
+              </div>
             </h3>
-            <div className="space-y-2">
-              {unassigned.length === 0 ? (
-                <div className="text-sm text-slate-500 text-center py-10">כולם שובצו בהצלחה! 🎉</div>
-              ) : (
-                unassigned.map(g => (
-                  <div key={g.id}
-                       draggable
-                       onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('guestId', g.id); }}
-                       className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:scale-[1.02]">
-                    <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">{g.name}</div>
-                    <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">{g.group} • {g.side}</div>
-                  </div>
-                ))
-              )}
-            </div>
+            {sidebarOpen && (
+              <div className="space-y-2">
+                {unassigned.length === 0 ? (
+                  <div className="text-sm text-slate-500 text-center py-10">כולם שובצו בהצלחה! 🎉</div>
+                ) : (
+                  unassigned.map(g => (
+                    <div key={g.id}
+                         draggable
+                         onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData('guestId', g.id); }}
+                         className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:scale-[1.02]">
+                      <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">{g.name}</div>
+                      <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">{g.group} • {g.side}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* Map Canvas */}
-          <div className="relative flex-grow h-full bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]"
-               onDragOver={e => e.preventDefault()} 
-                onDrop={e => {
-                 e.preventDefault();
-                 const guestId = e.dataTransfer.getData('guestId');
-                 if (guestId) { unassignGuest(guestId); return; }
-                 
-                 const tableId = e.dataTransfer.getData('tableId');
-                 if (tableId) {
-                   const rect = e.currentTarget.getBoundingClientRect();
-                   const x = (e.clientX - rect.left) / zoom - 40; 
-                   const y = (e.clientY - rect.top) / zoom - 40;
-                   const boundedX = Math.max(0, x);
-                   const boundedY = Math.max(0, y);
-                   updateTable(tableId, { x: boundedX, y: boundedY });
-                 }
-               }}>
-            
+          <div className="relative flex-grow h-full bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner">
             <div className="absolute top-4 left-4 text-xs font-semibold text-slate-500 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm pointer-events-none z-20">
               💡 גרור אנשים לשולחנות, או לחיצה אחת על שולחן לעריכה
             </div>
@@ -2010,9 +1999,30 @@ function Seating() {
               <span className="w-12 text-center text-xs font-bold text-slate-700 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
               <button onClick={() => setZoom(p => Math.min(2, p + 0.1))} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full font-bold text-lg">+</button>
             </div>
-            
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }} className="absolute inset-0 transition-transform duration-200">
-            {tables.map((t, index) => {
+
+            <div className="w-full h-full overflow-auto custom-scrollbar"
+                 onDragOver={e => e.preventDefault()} 
+                 onDrop={e => {
+                   e.preventDefault();
+                   const guestId = e.dataTransfer.getData('guestId');
+                   if (guestId) { unassignGuest(guestId); return; }
+                   
+                   const tableId = e.dataTransfer.getData('tableId');
+                   if (tableId) {
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     const scrollX = e.currentTarget.scrollLeft;
+                     const scrollY = e.currentTarget.scrollTop;
+                     const x = (e.clientX - rect.left + scrollX) / zoom - 40; 
+                     const y = (e.clientY - rect.top + scrollY) / zoom - 40;
+                     const boundedX = Math.max(0, x);
+                     const boundedY = Math.max(0, y);
+                     updateTable(tableId, { x: boundedX, y: boundedY });
+                   }
+                 }}>
+              
+              <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: '3000px', height: '3000px' }} 
+                   className="relative bg-[length:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] transition-transform duration-200">
+              {tables.map((t, index) => {
               const seatedCount = t.guest_ids.length;
               const isFull = seatedCount >= num(t.capacity);
               const cols = 4;
@@ -2050,9 +2060,12 @@ function Seating() {
                         if (guestId) assignGuest(guestId, t.id);
                         const tableId = e.dataTransfer.getData('tableId');
                         if (tableId) {
-                           const rect = e.currentTarget.parentElement.getBoundingClientRect();
-                           const x = e.clientX - rect.left - 40; 
-                           const y = e.clientY - rect.top - 40;
+                           const container = e.currentTarget.parentElement.parentElement;
+                           const rect = container.getBoundingClientRect();
+                           const scrollX = container.scrollLeft;
+                           const scrollY = container.scrollTop;
+                           const x = (e.clientX - rect.left + scrollX) / zoom - 40; 
+                           const y = (e.clientY - rect.top + scrollY) / zoom - 40;
                            updateTable(tableId, { x, y });
                         }
                      }}
@@ -2065,7 +2078,8 @@ function Seating() {
               );
             })}
             </div>
-            {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium z-0">הוסף שולחן או רחבה כדי להתחיל</div>}
+            </div>
+            {tables.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium z-0 pointer-events-none">הוסף שולחן או רחבה כדי להתחיל</div>}
           </div>
         </div>
       )}
