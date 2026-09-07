@@ -631,6 +631,19 @@ function HeroSection() {
   const { weddingDate, setWeddingDate } = useApp();
   const parsedDate = weddingDate ? new Date(weddingDate) : null;
   const [timeLeft, setTimeLeft] = useState(null);
+  const dateInputRef = useRef(null);
+
+  const handleDateClick = () => {
+    try {
+      if (dateInputRef.current && 'showPicker' in HTMLInputElement.prototype) {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current?.focus();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (!parsedDate) {
@@ -661,6 +674,13 @@ function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/50 to-slate-900/20"></div>
       <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply group-hover:bg-indigo-900/10 transition-colors duration-700"></div>
 
+      <input 
+        type="date" 
+        ref={dateInputRef} 
+        className="absolute top-1/2 left-1/2 w-0 h-0 opacity-0 pointer-events-none border-0 p-0" 
+        onChange={(e) => setWeddingDate(e.target.value)} 
+      />
+
       <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 animate-float">
         <div className="text-center md:text-right space-y-3">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
@@ -676,12 +696,9 @@ function HeroSection() {
                 {parsedDate.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
               <div className="flex gap-2 relative z-20">
-                <div className="relative inline-block">
-                  <button className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded text-white transition-colors" title="ערוך תאריך">
-                    ✎
-                  </button>
-                  <input type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setWeddingDate(e.target.value)} />
-                </div>
+                <button onClick={handleDateClick} className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded text-white transition-colors" title="ערוך תאריך">
+                  ✎
+                </button>
                 <button onClick={() => setWeddingDate(null)} className="p-1.5 bg-white/20 hover:bg-red-500/80 backdrop-blur-md rounded text-white transition-colors" title="מחק תאריך">
                   ✕
                 </button>
@@ -692,10 +709,9 @@ function HeroSection() {
 
         {!parsedDate ? (
           <div className="flex-shrink-0 relative z-20 inline-block">
-            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 block text-center">
+            <button onClick={handleDateClick} className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block text-center">
               + קבעו תאריך
             </button>
-            <input type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setWeddingDate(e.target.value)} />
           </div>
         ) : (
           timeLeft && (
