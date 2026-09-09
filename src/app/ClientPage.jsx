@@ -1234,7 +1234,7 @@ function Expenses() {
 
 // ── Guests ─────────────────────────────────────────────────────────────────
 function GuestModal({ guest, onSave, onClose }) {
-  const blank = { name: '', phone: '', party_size: 1, group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100 };
+  const blank = { name: '', phone: '', party_size: 1, group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100, save_the_date_sent: false };
   const [form, setForm] = useState(guest ? { party_size: 1, ...guest } : blank);
   const set = e => {
     const { name, value } = e.target;
@@ -1258,6 +1258,12 @@ function GuestModal({ guest, onSave, onClose }) {
             <Field label={`סבירות הגעה: ${form.arrival_probability ?? 100}%`}>
               <input type="range" name="arrival_probability" min="0" max="100" step="10" value={form.arrival_probability ?? 100} onChange={set} className="w-full accent-indigo-600 cursor-pointer" />
             </Field>
+          </div>
+          <div className="col-span-2 flex items-center mt-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input type="checkbox" name="save_the_date_sent" checked={!!form.save_the_date_sent} onChange={e => setForm(p => ({ ...p, save_the_date_sent: e.target.checked }))} className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-600 cursor-pointer" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">נשלח Save the Date</span>
+            </label>
           </div>
         </div>
         <div className="flex gap-2 justify-end pt-1">
@@ -1304,6 +1310,7 @@ function Guests() {
         'קבוצה': g.group,
         'כמות אורחים': g.party_size,
         'סטטוס': g.rsvp_status,
+        'נשלח Save the Date': g.save_the_date_sent ? 'כן' : 'לא',
         'סבירות הגעה (%)': g.arrival_probability ?? 100,
         'מתנה משוערת': g.estimated_gift,
         'מתנה בפועל': g.actual_gift,
@@ -1476,6 +1483,7 @@ function Guests() {
                   </div>
                 </div>
                 <div className="flex gap-1 items-center">
+                  {g.save_the_date_sent && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400">STD נשלח</span>}
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{g.arrival_probability ?? 100}%</span>
                 </div>
@@ -1506,6 +1514,7 @@ function Guests() {
                 <th className="text-right px-4 py-3 font-semibold">קבוצה</th>
                 <th className="text-right px-4 py-3 font-semibold">צד</th>
                 <th className="text-center px-4 py-3 font-semibold">סטטוס</th>
+                <th className="text-center px-4 py-3 font-semibold" title="Save the Date">STD</th>
                 <th className="text-center px-4 py-3 font-semibold">הגעה</th>
                 <th className="text-right px-4 py-3 font-semibold">מתנה מוערכת</th>
                 <th className="text-right px-4 py-3 font-semibold">מתנה בפועל</th>
@@ -1524,6 +1533,9 @@ function Guests() {
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{g.side}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${RSVP_BADGE[g.rsvp_status]}`}>{g.rsvp_status}</span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {g.save_the_date_sent ? <span className="text-indigo-500 font-bold">✓</span> : <span className="text-slate-300 font-normal">—</span>}
                   </td>
                   <td className="px-4 py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
                     {g.arrival_probability ?? 100}%
