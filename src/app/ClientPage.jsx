@@ -1379,8 +1379,13 @@ function Guests() {
               {showFiltersMobile ? 'הסתר סינון' : 'סינון מתקדם'}
             </button>
           </div>
-          <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
-            מציג <span className="text-indigo-600 dark:text-indigo-400">{countHeads(filtered)}</span> מתוך {countHeads(guests)} מוזמנים
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
+              מציג <span className="text-indigo-600 dark:text-indigo-400">{countHeads(filtered)}</span> מתוך {countHeads(guests)} מוזמנים
+            </div>
+            <div className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+              נשלח STD ל- <span className="font-bold">{countHeads(guests.filter(g => g.save_the_date_sent))}</span> אורחים
+            </div>
           </div>
         </div>
 
