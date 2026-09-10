@@ -1234,13 +1234,33 @@ function Expenses() {
 
 // ── Guests ─────────────────────────────────────────────────────────────────
 function GuestModal({ guest, onSave, onClose }) {
-  const blank = { name: '', phone: '', party_size: 1, group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100, save_the_date_sent: false };
-  const [form, setForm] = useState(guest ? { party_size: 1, ...guest } : blank);
+  const blank = { name: '', phone: '', party_size: 1, group: 'כללי', side: 'כלה', rsvp_status: 'ממתין', estimated_gift: GROUP_GIFT_DEFAULTS['כללי'], actual_gift: 0, arrival_probability: 100, save_the_date_sent: false, sub_guests: [] };
+  const [form, setForm] = useState(guest ? { party_size: 1, sub_guests: [], ...guest } : blank);
+  const [newSub, setNewSub] = useState('');
   const set = e => {
     const { name, value } = e.target;
     if (name === 'group') setForm(p => ({ ...p, group: value, estimated_gift: (GROUP_GIFT_DEFAULTS[value] || 350) * num(p.party_size || 1) }));
     else if (name === 'party_size') setForm(p => ({ ...p, party_size: value, estimated_gift: (GROUP_GIFT_DEFAULTS[p.group] || 350) * num(value || 1) }));
     else setForm(p => ({ ...p, [name]: value }));
+  };
+
+  const addSub = () => {
+    if (newSub.trim()) {
+      setForm(p => {
+        const subs = [...(p.sub_guests || []), newSub.trim()];
+        const newPartySize = subs.length + 1;
+        return { ...p, sub_guests: subs, party_size: newPartySize, estimated_gift: (GROUP_GIFT_DEFAULTS[p.group] || 350) * newPartySize };
+      });
+      setNewSub('');
+    }
+  };
+
+  const removeSub = (idx) => {
+    setForm(p => {
+      const subs = (p.sub_guests || []).filter((_, i) => i !== idx);
+      const newPartySize = Math.max(1, subs.length + 1);
+      return { ...p, sub_guests: subs, party_size: newPartySize, estimated_gift: (GROUP_GIFT_DEFAULTS[p.group] || 350) * newPartySize };
+    });
   };
   return (
     <Modal title={guest ? 'ערוך אורח' : 'הוסף אורח'} onClose={onClose}>
@@ -1248,7 +1268,26 @@ function GuestModal({ guest, onSave, onClose }) {
         <div className="grid grid-cols-2 gap-4">
           <Field label="שם האורח / משפחה"><TextInput name="name" value={form.name} onChange={set} required placeholder="שם מלא או זוג" /></Field>
           <Field label="טלפון"><TextInput name="phone" value={form.phone} onChange={set} type="tel" placeholder="050-0000000" /></Field>
-          <Field label="כמות אורחים"><TextInput name="party_size" value={form.party_size} onChange={set} type="number" min="1" required placeholder="1" /></Field>
+          <Field label="כמות אורחים (יתעדכן אוטומטית אם תוסיפו מלווים)"><TextInput name="party_size" value={form.party_size} onChange={set} type="number" min="1" required placeholder="1" /></Field>
+          
+          <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 pt-4 mt-2">
+            <Field label="שמות מלווים / בני משפחה (אופציונלי)">
+              <div className="flex gap-2 mb-2">
+                <TextInput value={newSub} onChange={e => setNewSub(e.target.value)} onKeyDown={e => { if(e.key === 'Enter') { e.preventDefault(); addSub(); } }} placeholder="הכנס שם מלווה (למשל: דנה)" />
+                <Btn type="button" variant="secondary" onClick={addSub}>הוסף</Btn>
+              </div>
+              {form.sub_guests && form.sub_guests.length > 0 && (
+                <div className="flex flex-col gap-2 mt-3">
+                  {form.sub_guests.map((sg, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{sg}</span>
+                      <button type="button" onClick={() => removeSub(idx)} className="text-slate-400 hover:text-red-500 font-bold transition-colors">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Field>
+          </div>
           <Field label="קבוצה"><SelectInput name="group" value={form.group} onChange={set} options={GUEST_GROUPS.includes(form.group) ? GUEST_GROUPS : [form.group, ...GUEST_GROUPS]} /></Field>
           <Field label="צד"><SelectInput name="side" value={form.side} onChange={set} options={GUEST_SIDES} /></Field>
           <Field label="סטטוס"><SelectInput name="rsvp_status" value={form.rsvp_status} onChange={set} options={RSVP_STATUSES} /></Field>
@@ -1309,6 +1348,7 @@ function Guests() {
         'צד': g.side,
         'קבוצה': g.group,
         'כמות אורחים': g.party_size,
+        'מלווים / בני משפחה': g.sub_guests ? g.sub_guests.join(', ') : '',
         'סטטוס': g.rsvp_status,
         'נשלח Save the Date': g.save_the_date_sent ? 'כן' : 'לא',
         'סבירות הגעה (%)': g.arrival_probability ?? 100,
@@ -1481,7 +1521,14 @@ function Guests() {
             <div key={g.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100">{g.name} <span className="text-sm font-normal text-slate-500">({g.party_size || 1})</span></h3>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100">{g.name} <span className="text-sm font-normal text-slate-500">({g.party_size || 1})</span></h3>
+                    {g.sub_guests && g.sub_guests.length > 0 && (
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        + {g.sub_guests.join(', ')}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-slate-500">{g.group} • {g.side}</span>
                     {g.phone && <a href={`tel:${g.phone}`} className="text-xs font-medium text-indigo-500 hover:text-indigo-600 flex items-center gap-1" onClick={e => e.stopPropagation()}>📞 {g.phone}</a>}
@@ -1529,7 +1576,14 @@ function Guests() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {filtered.map(g => (
                 <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{g.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{g.name}</div>
+                    {g.sub_guests && g.sub_guests.length > 0 && (
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        + {g.sub_guests.join(', ')}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
                     {g.phone ? <a href={`tel:${g.phone}`} className="text-indigo-500 hover:underline">{g.phone}</a> : '—'}
                   </td>
