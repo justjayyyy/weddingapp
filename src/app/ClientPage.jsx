@@ -1426,7 +1426,7 @@ function Guests() {
               מציג <span className="text-indigo-600 dark:text-indigo-400">{countHeads(filtered)}</span> מתוך {countHeads(guests)} מוזמנים
             </div>
             <div className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
-              נשלח STD ל- <span className="font-bold">{countHeads(guests.filter(g => g.save_the_date_sent))}</span> אורחים
+              נשלח STD ל- <span className="font-bold">{guests.filter(g => g.save_the_date_sent).length}</span> משפחות/קבוצות
             </div>
           </div>
         </div>
@@ -1520,9 +1520,9 @@ function Guests() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">נשלח STD</span>
             <div className="flex flex-wrap gap-1.5">
               {['הכל', 'נשלח', 'לא נשלח'].map(s => {
-                let count = countHeads(guests);
-                if (s === 'נשלח') count = countHeads(guests.filter(g => g.save_the_date_sent));
-                if (s === 'לא נשלח') count = countHeads(guests.filter(g => !g.save_the_date_sent));
+                let count = guests.length;
+                if (s === 'נשלח') count = guests.filter(g => g.save_the_date_sent).length;
+                if (s === 'לא נשלח') count = guests.filter(g => !g.save_the_date_sent).length;
                 return <FilterPill key={s} active={stdFilter === s} color="indigo" onClick={() => setStdFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
               })}
             </div>
