@@ -1323,6 +1323,7 @@ function Guests() {
   const [groupFilter, setGroupFilter] = useState('הכל');
   const [phoneFilter, setPhoneFilter] = useState('הכל');
   const [probFilter, setProbFilter] = useState([]);
+  const [stdFilter, setStdFilter] = useState('הכל');
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const handleSave = (data) => { if (modal === 'new') addGuest(data); else updateGuest(modal.id, data); setModal(null); };
@@ -1331,6 +1332,7 @@ function Guests() {
     (rsvpFilter === 'הכל' || g.rsvp_status === rsvpFilter) &&
     (sideFilter === 'הכל' || g.side === sideFilter) &&
     (groupFilter === 'הכל' || g.group === groupFilter) &&
+    (stdFilter === 'הכל' || (stdFilter === 'נשלח' ? g.save_the_date_sent : !g.save_the_date_sent)) &&
     (phoneFilter === 'הכל' || (phoneFilter === 'יש טלפון' ? g.phone && g.phone.trim() !== '' : !g.phone || g.phone.trim() === '')) &&
     (probFilter.length === 0 || probFilter.includes(`${g.arrival_probability ?? 100}%`)) &&
     (g.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1507,6 +1509,21 @@ function Guests() {
                     {s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span>
                   </FilterPill>
                 );
+              })}
+            </div>
+          </div>
+
+          <div className="hidden xl:block w-px bg-slate-100 dark:bg-slate-700/50"></div>
+
+          {/* STD Filter */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">נשלח STD</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['הכל', 'נשלח', 'לא נשלח'].map(s => {
+                let count = countHeads(guests);
+                if (s === 'נשלח') count = countHeads(guests.filter(g => g.save_the_date_sent));
+                if (s === 'לא נשלח') count = countHeads(guests.filter(g => !g.save_the_date_sent));
+                return <FilterPill key={s} active={stdFilter === s} color="indigo" onClick={() => setStdFilter(s)}>{s} <span className="opacity-70 text-[10px] font-normal mr-0.5">({count})</span></FilterPill>;
               })}
             </div>
           </div>
